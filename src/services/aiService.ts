@@ -67,14 +67,12 @@ export async function generateBuddyImage(prompt: string) {
   if (cached) return cached;
 
   const url = pollinationsUrl(
-    `3D character design, Stumble Guys style, ${prompt}, vibrant colors, rounded blocky shapes, expressive face, game asset, ISOLATED ON SOLID WHITE BACKGROUND, NO SHADOWS, high quality`,
+    `3D character design, Stumble Guys style, ${prompt}, vibrant colors, rounded blocky shapes, expressive face, game asset, full body character, white isolated background, high quality cartoon`,
     512, 512
   );
-
-  // Return the URL directly - Pollinations serves the image at the URL
-  const withoutBg = await removeWhiteBackground(url);
-  setCached(key, withoutBg);
-  return withoutBg;
+  // Return URL directly - can't process cross-origin images in canvas (CORS)
+  setCached(key, url);
+  return url;
 }
 
 export async function generateGameScenario(theme: string) {
