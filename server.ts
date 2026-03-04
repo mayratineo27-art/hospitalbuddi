@@ -1,6 +1,7 @@
 // AI API routes - all AI calls happen server-side so keys are runtime env vars
 import express from "express";
 import { createServer } from "http";
+import https from "https";
 import { Server } from "socket.io";
 import { createServer as createViteServer } from "vite";
 import path from "path";
@@ -21,23 +22,34 @@ async function startServer() {
   app.use(express.json());
 
   // --- Image Proxy: fetches Pollinations.ai images server-side to avoid ORB/CORS blocks ---
-  app.get("/api/image-proxy", async (req, res) => {
+  app.get("/api/image-proxy", (req, res) => {
     const url = req.query.url as string;
     if (!url || !url.startsWith("https://image.pollinations.ai/")) {
-      return res.status(400).json({ error: "Invalid image URL" });
+      return res.status(400).json({ error: "Invalid proxy URL" });
     }
-    try {
-      const fetch = (await import("node-fetch")).default;
-      const imageRes = await fetch(url);
-      if (!imageRes.ok) throw new Error(`Pollinations returned ${imageRes.status}`);
-      const contentType = imageRes.headers.get("content-type") || "image/jpeg";
+    const parsedUrl = new URL(url);
+    const options = {
+      hostname: parsedUrl.hostname,
+      path: parsedUrl.pathname + parsedUrl.search,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; HospitalBuddi/1.0)",
+        "Accept": "image/webp,image/png,image/jpeg,*/*",
+        "Referer": "https://image.pollinations.ai/",
+      }
+    };
+    https.get(options, (imageRes) => {
+      const contentType = imageRes.headers["content-type"] || "image/jpeg";
       res.setHeader("Content-Type", contentType);
       res.setHeader("Cache-Control", "public, max-age=86400");
-      imageRes.body?.pipe(res);
-    } catch (err: any) {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      if (!contentType.startsWith("image/")) {
+        return res.status(503).end();
+      }
+      imageRes.pipe(res);
+    }).on("error", (err) => {
       console.error("Image proxy error:", err.message);
       res.status(500).json({ error: err.message });
-    }
+    });
   });
 
   // --- Text Generation Proxy (Groq) ---

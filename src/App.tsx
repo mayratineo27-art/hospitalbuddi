@@ -255,7 +255,8 @@ const HomeView = ({
             </div>
           ) : (
             <>
-              <img src={roomImg || ""} className="absolute inset-0 w-full h-full object-cover" alt="Room" />
+              {/* Room background - CSS gradient or image */}
+              <div className="absolute inset-0 w-full h-full" style={{ background: roomImg || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }} />
               <div className="absolute inset-0 flex items-center justify-center">
                 <motion.img
                   animate={{ y: [0, -20, 0] }}

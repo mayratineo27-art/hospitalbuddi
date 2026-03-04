@@ -1,50 +1,39 @@
-// aiService.ts - Images via Pollinations.ai (free, no API key!)
-// Text via Groq through our backend proxy (/api/generate-text)
+// aiService.ts - Using DiceBear for reliable svg avatars + Groq for text
+// No external image API keys needed, no bot protection issues
 
-const cache: Record<string, string> = {};
+// DiceBear styles: adventurer, bottts, fun-emoji, lorelei, micah, etc.
+const BUDDY_STYLES = ["fun-emoji", "bottts", "adventurer", "micah", "lorelei-neutral"];
 
-function getCached(key: string): string | null {
-  if (cache[key]) return cache[key];
-  const stored = localStorage.getItem(`v3_cache_${key}`);
-  if (stored) { cache[key] = stored; return stored; }
-  return null;
+function getBuddyStyle(prompt: string): string {
+  // Pick a consistent style based on prompt hash
+  const hash = prompt.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  return BUDDY_STYLES[hash % BUDDY_STYLES.length];
 }
 
-function setCached(key: string, value: string) {
-  cache[key] = value;
-  try { localStorage.setItem(`v3_cache_${key}`, value); } catch (_) { }
+export function generateBuddyImage(prompt: string): string {
+  const seed = encodeURIComponent(prompt.slice(0, 20));
+  const style = getBuddyStyle(prompt);
+  // DiceBear returns perfectly reliable SVGs - no API key, no bot protection
+  return `https://api.dicebear.com/9.x/${style}/svg?seed=${seed}&size=256&backgroundColor=transparent`;
 }
 
-function pollinationsUrl(prompt: string, width = 512, height = 512): string {
-  // Deterministic seed based on prompt so the same prompt always gives the same image
-  const seed = prompt.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-  const directUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`;
-  // Route through our backend proxy to avoid browser ORB/CORS security blocks
-  return `/api/image-proxy?url=${encodeURIComponent(directUrl)}`;
+// Room backgrounds are vivid CSS gradient strings (no image API needed)
+const ROOM_BACKGROUNDS = [
+  "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+  "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+  "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+  "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+  "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+];
+
+export function generateEnvironmentImage(prompt: string): string {
+  const hash = prompt.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  return ROOM_BACKGROUNDS[hash % ROOM_BACKGROUNDS.length];
 }
 
-async function removeWhiteBackground(src: string): Promise<string> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) { resolve(src); return; }
-      ctx.drawImage(img, 0, 0);
-      const d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      for (let i = 0; i < d.length; i += 4) {
-        if (d[i] > 235 && d[i + 1] > 235 && d[i + 2] > 235) imageData.data[i + 3] = 0;
-      }
-      ctx.putImageData(imageData, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
-    };
-    img.onerror = () => resolve(src);
-    img.src = src;
-  });
+export function generateGameScenario(theme: string): string {
+  const hash = theme.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  return ROOM_BACKGROUNDS[hash % ROOM_BACKGROUNDS.length];
 }
 
 async function callTextAPI(systemPrompt: string, userPrompt: string, maxTokens = 200): Promise<string | null> {
@@ -61,27 +50,6 @@ async function callTextAPI(systemPrompt: string, userPrompt: string, maxTokens =
     console.error("Text API error:", err);
     return null;
   }
-}
-
-export function generateBuddyImage(prompt: string): string {
-  return pollinationsUrl(
-    `3D character, Stumble Guys style, ${prompt}, vibrant colors, cartoon, game character, white background`,
-    512, 512
-  );
-}
-
-export function generateGameScenario(theme: string): string {
-  return pollinationsUrl(
-    `3D game level, ${theme} theme, Stumble Guys style, colorful, fun, vibrant, high detail`,
-    1024, 576
-  );
-}
-
-export function generateEnvironmentImage(prompt: string): string {
-  return pollinationsUrl(
-    `3D cartoon environment, ${prompt}, colorful, game background, high quality`,
-    1024, 576
-  );
 }
 
 export async function generateStoryContent(topic: string) {
