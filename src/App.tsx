@@ -1162,14 +1162,17 @@ export default function App() {
         }
         keysToDelete.forEach(k => localStorage.removeItem(k));
 
-        // buddy is synchronous (SVG data URI), room needs await (HF API call)
-        const buddy = generateBuddyImage("Goku from Dragon Ball, Stumble Guys style, cute version, orange gi, black spiky hair, energetic pose");
-        setBuddyImg(buddy);
+        // Show orange dragon placeholder immediately, then replace with HF-generated Goku
+        setBuddyImg(`data:image/svg+xml;charset=utf-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="60" fill="#FF8C00"/><text x="60" y="75" text-anchor="middle" font-size="52">🐉</text></svg>')}`);
         setLoading(false);
-        // Load room in background (HF image generation can take a few seconds)
-        generateEnvironmentImage("A vibrant, colorful game lobby with floating islands and neon lights")
-          .then(room => setRoomImg(room))
-          .catch(() => setRoomImg("linear-gradient(135deg, #667eea 0%, #764ba2 100%)"));
+        // Generate both in parallel: Goku avatar + room background (HF takes ~10-15s)
+        Promise.all([
+          generateBuddyImage("Goku from Dragon Ball, chibi anime style, orange gi, spiky black hair, energetic pose"),
+          generateEnvironmentImage("A vibrant, colorful game lobby with floating islands and neon lights"),
+        ]).then(([buddy, room]) => {
+          setBuddyImg(buddy);
+          setRoomImg(room);
+        }).catch(() => setRoomImg("linear-gradient(135deg, #667eea 0%, #764ba2 100%)"))
       } catch (error) {
         console.error("Error loading initial data:", error);
       } finally {
