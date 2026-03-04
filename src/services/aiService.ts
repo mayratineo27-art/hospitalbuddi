@@ -10,30 +10,26 @@ function getBuddyStyle(prompt: string): string {
   return BUDDY_STYLES[hash % BUDDY_STYLES.length];
 }
 
-export function generateBuddyImage(prompt: string): string {
-  const seed = encodeURIComponent(prompt.slice(0, 20));
-  const style = getBuddyStyle(prompt);
-  // DiceBear returns perfectly reliable SVGs - no API key, no bot protection
-  return `https://api.dicebear.com/9.x/${style}/svg?seed=${seed}&size=256&backgroundColor=transparent`;
+// Goku-inspired avatar: DiceBear 'adventurer' with spiky hair look
+export function generateBuddyImage(_prompt: string): string {
+  // Using 'adventurer' style with specific seed + orange/gold colors to evoke Goku
+  return `https://api.dicebear.com/9.x/adventurer/svg?seed=Goku&hair=short01&hairColor=f5a623,f0c040&skinColor=f5c5a0&backgroundColor=transparent&size=256`;
 }
 
-// Room backgrounds are vivid CSS gradient strings (no image API needed)
-const ROOM_BACKGROUNDS = [
-  "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-  "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-  "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-  "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-  "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-];
+// Unique themed gradient for each game world
+const THEME_BACKGROUNDS: Record<string, string> = {
+  "Espacio": "radial-gradient(ellipse at top, #0f0c29, #302b63, #24243e)",
+  "Jungla": "linear-gradient(135deg, #1a6b06 0%, #52b812 50%, #1e3a0a 100%)",
+  "Dulces": "linear-gradient(135deg, #ff9ff3 0%, #ffeaa7 50%, #fd79a8 100%)",
+  "Hielo": "linear-gradient(135deg, #a8edea 0%, #74b9ff 50%, #dfe6f9 100%)",
+};
 
-export function generateEnvironmentImage(prompt: string): string {
-  const hash = prompt.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-  return ROOM_BACKGROUNDS[hash % ROOM_BACKGROUNDS.length];
+export function generateEnvironmentImage(_prompt: string): string {
+  return "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
 }
 
 export function generateGameScenario(theme: string): string {
-  const hash = theme.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-  return ROOM_BACKGROUNDS[hash % ROOM_BACKGROUNDS.length];
+  return THEME_BACKGROUNDS[theme] || "linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #ffecd2 100%)";
 }
 
 async function callTextAPI(systemPrompt: string, userPrompt: string, maxTokens = 200): Promise<string | null> {

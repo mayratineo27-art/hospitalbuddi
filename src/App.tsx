@@ -610,7 +610,7 @@ const GamesView = ({
               <RefreshCw className="animate-spin text-white" size={64} />
             </div>
           ) : scenario ? (
-            <img src={scenario} className="w-full h-full object-cover opacity-80" alt="Game" />
+            <div className="absolute inset-0 w-full h-full" style={{ background: scenario }} />
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-12 text-center">
               <Gamepad2 size={80} className="mb-6 opacity-20" />
