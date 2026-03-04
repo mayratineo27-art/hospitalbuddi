@@ -21,29 +21,6 @@ async function startServer() {
   app.use(express.json());
 
   // --- AI Proxy Routes (server-side, keys are runtime env vars) ---
-  app.post("/api/generate-image", async (req, res) => {
-    const { prompt, aspectRatio = "1:1" } = req.body;
-    if (!process.env.GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
-    try {
-      const { GoogleGenAI } = await import("@google/genai");
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-image",
-        contents: { parts: [{ text: prompt }] },
-        config: { imageConfig: { aspectRatio } },
-      });
-      for (const part of response.candidates?.[0]?.content?.parts || []) {
-        if (part.inlineData) {
-          return res.json({ data: `data:image/png;base64,${part.inlineData.data}` });
-        }
-      }
-      res.status(500).json({ error: "No image data returned" });
-    } catch (err: any) {
-      console.error("Gemini error:", err.message);
-      res.status(500).json({ error: err.message });
-    }
-  });
-
   app.post("/api/generate-text", async (req, res) => {
     const { systemPrompt, userPrompt, model = "llama3-8b-8192", maxTokens = 200 } = req.body;
     if (!process.env.GROQ_API_KEY) return res.status(500).json({ error: "GROQ_API_KEY not configured" });
