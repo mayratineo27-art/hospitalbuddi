@@ -263,6 +263,8 @@ const HomeView = ({
                   src={buddyImg || ""}
                   className="w-1/2 h-1/2 object-contain filter drop-shadow-[0_15px_15px_rgba(0,0,0,0.3)]"
                   alt="Buddi"
+                  style={{ mixBlendMode: 'multiply' }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               </div>
 
@@ -1149,10 +1151,9 @@ export default function App() {
   useEffect(() => {
     async function loadInitialData() {
       try {
-        const [buddy, room] = await Promise.all([
-          generateBuddyImage("Goku from Dragon Ball, Stumble Guys style, cute version, orange gi, black spiky hair, energetic pose"),
-          generateEnvironmentImage("A vibrant, colorful game lobby with floating islands and neon lights")
-        ]);
+        // URLs are generated synchronously - browser fetches images lazily
+        const buddy = generateBuddyImage("Goku from Dragon Ball, Stumble Guys style, cute version, orange gi, black spiky hair, energetic pose");
+        const room = generateEnvironmentImage("A vibrant, colorful game lobby with floating islands and neon lights");
         setBuddyImg(buddy);
         setRoomImg(room);
       } catch (error) {

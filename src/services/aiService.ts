@@ -16,9 +16,10 @@ function setCached(key: string, value: string) {
 }
 
 function pollinationsUrl(prompt: string, width = 512, height = 512): string {
-  const seed = Math.floor(Math.random() * 999999);
+  // Deterministic seed based on prompt so the same prompt always gives the same image
+  const seed = prompt.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
   const encoded = encodeURIComponent(prompt);
-  return `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&seed=${seed}&nologo=true&enhance=true`;
+  return `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`;
 }
 
 async function removeWhiteBackground(src: string): Promise<string> {
@@ -61,44 +62,25 @@ async function callTextAPI(systemPrompt: string, userPrompt: string, maxTokens =
   }
 }
 
-export async function generateBuddyImage(prompt: string) {
-  const key = `buddy_${prompt}`;
-  const cached = getCached(key);
-  if (cached) return cached;
-
-  const url = pollinationsUrl(
-    `3D character design, Stumble Guys style, ${prompt}, vibrant colors, rounded blocky shapes, expressive face, game asset, full body character, white isolated background, high quality cartoon`,
+export function generateBuddyImage(prompt: string): string {
+  return pollinationsUrl(
+    `3D character, Stumble Guys style, ${prompt}, vibrant colors, cartoon, game character, white background`,
     512, 512
   );
-  // Return URL directly - can't process cross-origin images in canvas (CORS)
-  setCached(key, url);
-  return url;
 }
 
-export async function generateGameScenario(theme: string) {
-  const key = `scenario_${theme}`;
-  const cached = getCached(key);
-  if (cached) return cached;
-
-  const url = pollinationsUrl(
-    `3D video game level design, ${theme} theme, Stumble Guys aesthetic, colorful obstacles, floating platforms, vibrant sky, fun atmosphere, wide landscape, isometric view`,
+export function generateGameScenario(theme: string): string {
+  return pollinationsUrl(
+    `3D game level, ${theme} theme, Stumble Guys style, colorful, fun, vibrant, high detail`,
     1024, 576
   );
-  setCached(key, url);
-  return url;
 }
 
-export async function generateEnvironmentImage(prompt: string) {
-  const key = `env_${prompt}`;
-  const cached = getCached(key);
-  if (cached) return cached;
-
-  const url = pollinationsUrl(
-    `3D cartoon style game environment, ${prompt}, soft lighting, warm colors, cozy atmosphere, high detail, game background`,
+export function generateEnvironmentImage(prompt: string): string {
+  return pollinationsUrl(
+    `3D cartoon environment, ${prompt}, colorful, game background, high quality`,
     1024, 576
   );
-  setCached(key, url);
-  return url;
 }
 
 export async function generateStoryContent(topic: string) {
