@@ -2,10 +2,10 @@ import { GoogleGenAI } from "@google/genai";
 import { Groq } from "groq-sdk";
 
 // Initialize Gemini AI (For Images Only)
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const ai = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
 
 // Initialize Groq AI (For Ultra-fast Text)
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY, dangerouslyAllowBrowser: true });
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY, dangerouslyAllowBrowser: true }) : null;
 
 const cache: Record<string, string> = {};
 
@@ -69,6 +69,7 @@ async function removeWhiteBackground(base64: string): Promise<string> {
 }
 
 export async function generateBuddyImage(prompt: string) {
+  if (!ai) return null;
   return getCachedImage(`buddy_${prompt}`, async () => {
     try {
       const response = await ai.models.generateContent({
@@ -101,6 +102,7 @@ export async function generateBuddyImage(prompt: string) {
 }
 
 export async function generateGameScenario(theme: string) {
+  if (!ai) return null;
   return getCachedImage(`scenario_${theme}`, async () => {
     try {
       const response = await ai.models.generateContent({
@@ -132,6 +134,7 @@ export async function generateGameScenario(theme: string) {
 }
 
 export async function generateStoryContent(topic: string) {
+  if (!groq) return "¡Configura tu GROQ_API_KEY para activar los cuentos! ✨";
   try {
     const completion = await groq.chat.completions.create({
       messages: [
@@ -157,6 +160,7 @@ export async function generateStoryContent(topic: string) {
 }
 
 export async function generateCheerMessage() {
+  if (!groq) return "¡Eres un campeón! ✨";
   try {
     const completion = await groq.chat.completions.create({
       messages: [
@@ -182,6 +186,7 @@ export async function generateCheerMessage() {
 }
 
 export async function generateEnvironmentImage(prompt: string) {
+  if (!ai) return null;
   return getCachedImage(`env_${prompt}`, async () => {
     try {
       const response = await ai.models.generateContent({
