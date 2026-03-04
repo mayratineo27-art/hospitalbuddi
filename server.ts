@@ -86,7 +86,7 @@ async function startServer() {
 
   // --- Text Generation Proxy (Groq) ---
   app.post("/api/generate-text", async (req, res) => {
-    const { systemPrompt, userPrompt, model = "llama3-8b-8192", maxTokens = 200 } = req.body;
+    const { systemPrompt, userPrompt, model = "llama-3.1-8b-instant", maxTokens = 200 } = req.body;
     if (!process.env.GROQ_API_KEY) return res.status(500).json({ error: "GROQ_API_KEY not configured" });
     try {
       const { Groq } = await import("groq-sdk");
