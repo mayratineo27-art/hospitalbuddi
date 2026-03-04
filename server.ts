@@ -52,6 +52,38 @@ async function startServer() {
     });
   });
 
+  // --- Hugging Face FLUX.1-schnell: real AI image generation ---
+  app.post("/api/hf-image", async (req, res) => {
+    const { prompt } = req.body;
+    const hfToken = process.env.HF_TOKEN;
+    if (!hfToken) return res.status(500).json({ error: "HF_TOKEN not configured" });
+    if (!prompt) return res.status(400).json({ error: "prompt required" });
+    try {
+      const response = await fetch(
+        "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${hfToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ inputs: prompt, parameters: { num_inference_steps: 4 } }),
+        }
+      );
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("HF API error:", errText);
+        return res.status(response.status).json({ error: errText });
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString("base64");
+      res.json({ image: `data:image/jpeg;base64,${base64}` });
+    } catch (err: any) {
+      console.error("HF image error:", err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // --- Text Generation Proxy (Groq) ---
   app.post("/api/generate-text", async (req, res) => {
     const { systemPrompt, userPrompt, model = "llama3-8b-8192", maxTokens = 200 } = req.body;

@@ -1152,11 +1152,14 @@ export default function App() {
   useEffect(() => {
     async function loadInitialData() {
       try {
-        // URLs are generated synchronously - browser fetches images lazily
+        // buddy is synchronous (SVG data URI), room needs await (HF API call)
         const buddy = generateBuddyImage("Goku from Dragon Ball, Stumble Guys style, cute version, orange gi, black spiky hair, energetic pose");
-        const room = generateEnvironmentImage("A vibrant, colorful game lobby with floating islands and neon lights");
         setBuddyImg(buddy);
-        setRoomImg(room);
+        setLoading(false);
+        // Load room in background (HF image generation can take a few seconds)
+        generateEnvironmentImage("A vibrant, colorful game lobby with floating islands and neon lights")
+          .then(room => setRoomImg(room))
+          .catch(() => setRoomImg("linear-gradient(135deg, #667eea 0%, #764ba2 100%)"));
       } catch (error) {
         console.error("Error loading initial data:", error);
       } finally {
