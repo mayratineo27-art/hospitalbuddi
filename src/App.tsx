@@ -1152,6 +1152,16 @@ export default function App() {
   useEffect(() => {
     async function loadInitialData() {
       try {
+        // Clear any old cached images from previous deployments
+        const keysToDelete: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('v2_cache_') || key.startsWith('v3_cache_'))) {
+            keysToDelete.push(key);
+          }
+        }
+        keysToDelete.forEach(k => localStorage.removeItem(k));
+
         // buddy is synchronous (SVG data URI), room needs await (HF API call)
         const buddy = generateBuddyImage("Goku from Dragon Ball, Stumble Guys style, cute version, orange gi, black spiky hair, energetic pose");
         setBuddyImg(buddy);
