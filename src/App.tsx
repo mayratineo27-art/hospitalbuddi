@@ -793,7 +793,7 @@ const RoomView = ({ buddyImg, onUpdateBuddy }: { buddyImg: string | null, onUpda
               <RefreshCw className="animate-spin text-orange-500" size={48} />
             </div>
           ) : null}
-          <img src={room || "https://picsum.photos/seed/room/1200/800"} className="w-full h-full object-cover" alt="Room" />
+          <div className="absolute inset-0 w-full h-full" style={{ background: room || "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)" }} />
           <div className="absolute inset-0 flex items-center justify-center">
             <img src={buddyImg || ""} className="w-1/3 h-1/3 object-contain filter drop-shadow-[0_20px_20px_rgba(0,0,0,0.4)]" alt="Buddi" />
           </div>
