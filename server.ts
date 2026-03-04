@@ -1,3 +1,4 @@
+// AI API routes - all AI calls happen server-side so keys are runtime env vars
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -16,31 +17,73 @@ async function startServer() {
 
   const PORT = Number(process.env.PORT) || 3000;
 
-  // Game State: Room -> Players object
+  // Parse JSON bodies for API routes
+  app.use(express.json());
+
+  // --- AI Proxy Routes (server-side, keys are runtime env vars) ---
+  app.post("/api/generate-image", async (req, res) => {
+    const { prompt, aspectRatio = "1:1" } = req.body;
+    if (!process.env.GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
+    try {
+      const { GoogleGenAI } = await import("@google/genai");
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-image",
+        contents: { parts: [{ text: prompt }] },
+        config: { imageConfig: { aspectRatio } },
+      });
+      for (const part of response.candidates?.[0]?.content?.parts || []) {
+        if (part.inlineData) {
+          return res.json({ data: `data:image/png;base64,${part.inlineData.data}` });
+        }
+      }
+      res.status(500).json({ error: "No image data returned" });
+    } catch (err: any) {
+      console.error("Gemini error:", err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/generate-text", async (req, res) => {
+    const { systemPrompt, userPrompt, model = "llama3-8b-8192", maxTokens = 200 } = req.body;
+    if (!process.env.GROQ_API_KEY) return res.status(500).json({ error: "GROQ_API_KEY not configured" });
+    try {
+      const { Groq } = await import("groq-sdk");
+      const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+      const completion = await groq.chat.completions.create({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        model,
+        temperature: 0.7,
+        max_tokens: maxTokens,
+      });
+      res.json({ text: completion.choices[0]?.message?.content || "" });
+    } catch (err: any) {
+      console.error("Groq error:", err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // --- Game State: Room -> Players object ---
   const rooms: Record<string, Record<string, { x: number, y: number, color: string, id: string }>> = {};
 
   io.on("connection", (socket) => {
-    // Get room from query, default to "global"
     const room = (socket.handshake.query.room as string) || "global";
     socket.join(room);
     console.log(`User ${socket.id} connected to room: ${room}`);
-    console.log("User connected:", socket.id);
 
-    // Initialize room if it doesn't exist
     if (!rooms[room]) rooms[room] = {};
 
-    // Initialize player in that room
     rooms[room][socket.id] = {
       id: socket.id,
-      x: Math.random() * 80 + 10, // 10% to 90%
+      x: Math.random() * 80 + 10,
       y: Math.random() * 80 + 10,
       color: `hsl(${Math.random() * 360}, 70%, 60%)`
     };
 
-    // Send current players in THIS ROOM to the new connection
     socket.emit("init", rooms[room]);
-
-    // Broadcast new player to others in THIS ROOM
     socket.to(room).emit("playerJoined", rooms[room][socket.id]);
 
     socket.on("move", (pos: { x: number, y: number }) => {
@@ -55,7 +98,6 @@ async function startServer() {
       console.log(`User ${socket.id} disconnected from room: ${room}`);
       if (rooms[room]) {
         delete rooms[room][socket.id];
-        // Cleanup empty rooms
         if (Object.keys(rooms[room]).length === 0) {
           delete rooms[room];
         } else {
