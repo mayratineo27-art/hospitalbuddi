@@ -18,8 +18,9 @@ function setCached(key: string, value: string) {
 function pollinationsUrl(prompt: string, width = 512, height = 512): string {
   // Deterministic seed based on prompt so the same prompt always gives the same image
   const seed = prompt.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-  const encoded = encodeURIComponent(prompt);
-  return `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`;
+  const directUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`;
+  // Route through our backend proxy to avoid browser ORB/CORS security blocks
+  return `/api/image-proxy?url=${encodeURIComponent(directUrl)}`;
 }
 
 async function removeWhiteBackground(src: string): Promise<string> {

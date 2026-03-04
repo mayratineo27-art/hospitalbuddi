@@ -20,7 +20,27 @@ async function startServer() {
   // Parse JSON bodies for API routes
   app.use(express.json());
 
-  // --- AI Proxy Routes (server-side, keys are runtime env vars) ---
+  // --- Image Proxy: fetches Pollinations.ai images server-side to avoid ORB/CORS blocks ---
+  app.get("/api/image-proxy", async (req, res) => {
+    const url = req.query.url as string;
+    if (!url || !url.startsWith("https://image.pollinations.ai/")) {
+      return res.status(400).json({ error: "Invalid image URL" });
+    }
+    try {
+      const fetch = (await import("node-fetch")).default;
+      const imageRes = await fetch(url);
+      if (!imageRes.ok) throw new Error(`Pollinations returned ${imageRes.status}`);
+      const contentType = imageRes.headers.get("content-type") || "image/jpeg";
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      imageRes.body?.pipe(res);
+    } catch (err: any) {
+      console.error("Image proxy error:", err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // --- Text Generation Proxy (Groq) ---
   app.post("/api/generate-text", async (req, res) => {
     const { systemPrompt, userPrompt, model = "llama3-8b-8192", maxTokens = 200 } = req.body;
     if (!process.env.GROQ_API_KEY) return res.status(500).json({ error: "GROQ_API_KEY not configured" });
