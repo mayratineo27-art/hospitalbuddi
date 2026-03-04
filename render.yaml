@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: hospitalbuddi
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: NODE_ENV
+        value: production

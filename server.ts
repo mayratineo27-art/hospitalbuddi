@@ -14,7 +14,7 @@ async function startServer() {
     }
   });
 
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   // Game State: Room -> Players object
   const rooms: Record<string, Record<string, { x: number, y: number, color: string, id: string }>> = {};

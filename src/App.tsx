@@ -6,6 +6,16 @@ import { generateBuddyImage, generateEnvironmentImage, generateGameScenario, gen
 import { cn } from "./lib/utils";
 import QRCode from 'react-qr-code';
 import { playClickSound, playCoinSound, playHitSound, playJumpSound } from "./lib/audioService";
+import { supabase } from "./lib/supabaseClient";
+
+// --- Types ---
+type UserProfile = {
+  id: string;
+  nickname: string;
+  energy: number;
+  happiness: number;
+  score: number;
+};
 
 // --- Components ---
 
@@ -417,7 +427,10 @@ const GamesView = ({
       alert("¡Tu Buddi está muy cansado para jugar! Llévalo a dormir en Inicio.");
       return;
     }
-    setEnergy(prev => Math.max(0, prev - 15));
+    const newEnergy = Math.max(0, energy - 15);
+    setEnergy(newEnergy);
+    supabase.from('profiles').update({ energy: newEnergy }).eq('id', (window as any).currentUserProfile?.id).then();
+
     if (soundEnabled) playJumpSound();
     setIsPlaying(true);
     isPlayingRef.current = true;
@@ -987,9 +1000,133 @@ const ConnectView = ({ onJoinRoom, currentRoom }: { onJoinRoom: (code: string) =
   );
 };
 
+// --- Login View ---
+
+const LoginView = ({ onLogin }: { onLogin: (profile: UserProfile) => void }) => {
+  const [nickname, setNickname] = useState("");
+  const [pin, setPin] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nickname || pin.length < 4) {
+      setError("Ingresa un Apodo y un PIN de al menos 4 números.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+
+    // Pseudo-email strategy for kids login
+    const email = `${nickname.toLowerCase().replace(/[^a-z0-9]/g, '')}_${pin}@hospitalbuddi.com`;
+    const password = `pin-${pin}-${nickname}`;
+
+    try {
+      let { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (authError && authError.message.includes("Invalid login")) {
+        // Auto-signup if user doesn't exist
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
+        if (signUpError) throw signUpError;
+        authData = signUpData;
+      } else if (authError) {
+        throw authError;
+      }
+
+      if (!authData.user) throw new Error("No user created");
+
+      // Fetch or create profile
+      let { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+
+      if (profileError && profileError.code === 'PGRST116') {
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert([{ id: authData.user.id, nickname, energy: 100, happiness: 100, score: 0 }])
+          .select()
+          .single();
+        if (insertError) throw insertError;
+        profile = newProfile;
+      } else if (profileError) {
+        throw profileError;
+      }
+
+      playJumpSound();
+      onLogin(profile as UserProfile);
+
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Error al conectar. ¿Configuraste las tablas SQL?");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6 relative">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-white p-10 rounded-[3rem] shadow-2xl border-b-8 border-gray-200 max-w-md w-full relative z-10"
+      >
+        <div className="text-center mb-8">
+          <Smile size={60} className="mx-auto text-blue-500 mb-4" />
+          <h1 className="text-4xl font-black text-blue-600 italic uppercase">Buddi Login</h1>
+          <p className="text-gray-500 font-bold mt-2">Guarda a tu mascota en la nube</p>
+        </div>
+
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div>
+            <label className="block text-sm font-black text-gray-700 mb-2 uppercase">Tu Apodo</label>
+            <input
+              type="text"
+              value={nickname}
+              onChange={e => setNickname(e.target.value)}
+              className="w-full p-4 bg-gray-50 border-4 border-gray-100 rounded-2xl text-xl font-black text-blue-600 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
+              placeholder="Ej. Leo"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-black text-gray-700 mb-2 uppercase">PIN Secreto (Números)</label>
+            <input
+              type="password"
+              inputMode="numeric"
+              value={pin}
+              onChange={e => setPin(e.target.value.replace(/[^0-9]/g, ''))}
+              className="w-full p-4 bg-gray-50 border-4 border-gray-100 rounded-2xl text-xl font-black text-blue-600 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors tracking-widest"
+              placeholder="****"
+              maxLength={4}
+            />
+          </div>
+
+          <AnimatePresence>
+            {error && (
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-500 font-bold text-sm text-center">
+                {error}
+              </motion.p>
+            )}
+          </AnimatePresence>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-green-500 hover:bg-green-400 active:bg-green-600 text-white font-black text-xl py-5 rounded-2xl shadow-[0_6px_0_rgb(22,163,74)] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {loading ? <RefreshCw className="animate-spin mx-auto" /> : "ENTRAR"}
+          </button>
+        </form>
+      </motion.div>
+    </div>
+  );
+};
+
 // --- Main App ---
 
 export default function App() {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [buddyImg, setBuddyImg] = useState<string | null>(null);
   const [roomImg, setRoomImg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1001,6 +1138,13 @@ export default function App() {
   // Buddy Care System State
   const [energy, setEnergy] = useState(100);
   const [happiness, setHappiness] = useState(100);
+
+  // Sync state changes to global store for GameLoop
+  useEffect(() => {
+    if (profile) {
+      (window as any).currentUserProfile = profile;
+    }
+  }, [profile]);
 
   useEffect(() => {
     async function loadInitialData() {
@@ -1022,7 +1166,21 @@ export default function App() {
         setLoading(false);
       }
     }
-    loadInitialData();
+
+    async function checkSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+        if (data) {
+          setProfile(data as UserProfile);
+          setEnergy(data.energy);
+          setHappiness(data.happiness);
+        }
+      }
+      loadInitialData();
+    }
+
+    checkSession();
   }, []);
 
   const handleCheer = async () => {
@@ -1047,6 +1205,33 @@ export default function App() {
     if (soundEnabled) playClickSound();
     setActiveTab(tab);
   };
+
+  const updateCloudState = async (attr: string, amount: number, setter: React.Dispatch<React.SetStateAction<number>>, isSet: boolean = false) => {
+    if (!profile) return;
+    setter(prev => {
+      const newVal = isSet ? amount : Math.min(100, Math.max(0, prev + amount));
+      supabase.from('profiles').update({ [attr]: newVal }).eq('id', profile.id).then();
+      return newVal;
+    });
+  };
+
+  // Replace HomeView handlers with Cloud Sync equivalents inside App rendering
+  const handleLogin = (p: UserProfile) => {
+    setProfile(p);
+    setEnergy(p.energy);
+    setHappiness(p.happiness);
+  };
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-[#E0F2FE] font-sans text-gray-900 overflow-hidden">
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-0 left-0 w-full h-full opacity-10" style={{ backgroundImage: 'radial-gradient(#3B82F6 2px, transparent 2px)', backgroundSize: '40px 40px' }} />
+        </div>
+        <LoginView onLogin={handleLogin} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#E0F2FE] font-sans text-gray-900 overflow-x-hidden pb-32">
@@ -1104,9 +1289,17 @@ export default function App() {
                 cheerMessage={cheerMessage}
                 onCheer={handleCheer}
                 energy={energy}
-                setEnergy={setEnergy}
+                setEnergy={(val) => {
+                  const newVal = typeof val === 'function' ? val(energy) : val;
+                  setEnergy(newVal);
+                  updateCloudState('energy', newVal, setEnergy, true);
+                }}
                 happiness={happiness}
-                setHappiness={setHappiness}
+                setHappiness={(val) => {
+                  const newVal = typeof val === 'function' ? val(happiness) : val;
+                  setHappiness(newVal);
+                  updateCloudState('happiness', newVal, setHappiness, true);
+                }}
                 soundEnabled={soundEnabled}
               />
             )}
@@ -1143,8 +1336,17 @@ export default function App() {
                     </div>
                   </div>
                   <div className="flex justify-between items-center p-6 bg-gray-50 rounded-3xl">
-                    <span className="font-black text-gray-600">Notificaciones</span>
-                    <div className="w-16 h-8 bg-gray-300 rounded-full relative"><div className="absolute left-1 top-1 w-6 h-6 bg-white rounded-full shadow-md" /></div>
+                    <span className="font-black text-gray-600">Sesión Activa</span>
+                    <button
+                      onClick={async () => {
+                        await supabase.auth.signOut();
+                        setProfile(null);
+                        if (soundEnabled) playHitSound();
+                      }}
+                      className="px-6 py-2 bg-red-500 text-white rounded-full font-black text-sm shadow-[0_4px_0_rgb(185,28,28)] active:shadow-none active:translate-y-1 transition-all"
+                    >
+                      Cerrar Sesión
+                    </button>
                   </div>
                 </div>
               </div>
