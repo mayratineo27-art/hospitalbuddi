@@ -1148,11 +1148,6 @@ export default function App() {
 
   useEffect(() => {
     async function loadInitialData() {
-      if (!process.env.GEMINI_API_KEY) {
-        console.error("GEMINI_API_KEY is missing!");
-        setLoading(false);
-        return;
-      }
       try {
         const [buddy, room] = await Promise.all([
           generateBuddyImage("Goku from Dragon Ball, Stumble Guys style, cute version, orange gi, black spiky hair, energetic pose"),
@@ -1235,11 +1230,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#E0F2FE] font-sans text-gray-900 overflow-x-hidden pb-32">
-      {!process.env.GEMINI_API_KEY && (
-        <div className="fixed top-0 left-0 w-full bg-red-500 text-white p-2 text-center z-[100] font-bold">
-          ⚠️ Error: No se detectó la clave de API de Gemini. Por favor, configúrala en los secretos.
-        </div>
-      )}
       {/* Background */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 left-0 w-full h-full opacity-10" style={{ backgroundImage: 'radial-gradient(#3B82F6 2px, transparent 2px)', backgroundSize: '40px 40px' }} />
