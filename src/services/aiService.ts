@@ -57,7 +57,8 @@ async function callHFImage(prompt: string, isBackground = false): Promise<string
     // Pollinations.ai is extremely fast and free, and supports CORS directly.
     // It's much more stable than HF Free Tier for these types of requests.
     const encPrompt = encodeURIComponent(prompt + (isBackground ? " 8k highly detailed colorful" : " white background clear vector style"));
-    const imageUrl = `https://image.pollinations.ai/prompt/${encPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=${model}`;
+    const timestamp = Date.now();
+    const imageUrl = `https://image.pollinations.ai/prompt/${encPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=${model}&cb=${timestamp}`;
 
     // Fetch it just to trigger generation and cache the result
     const res = await fetch(imageUrl);
