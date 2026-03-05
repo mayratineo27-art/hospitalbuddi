@@ -171,7 +171,7 @@ const MultiplayerMap = ({ buddyImg, currentRoom }: { buddyImg: string | null, cu
                 style={{ backgroundColor: player.color }}
               >
                 {buddyImg ? (
-                  <img src={buddyImg} className="w-full h-full object-contain filter drop-shadow-[0_5px_5px_rgba(0,0,0,0.3)]" alt="Player" />
+                  <img src={buddyImg} className="w-full h-full object-cover rounded-full filter drop-shadow-[0_5px_5px_rgba(0,0,0,0.3)] border-2 border-white" alt="Player" />
                 ) : (
                   <Smile className="text-white" />
                 )}
@@ -262,9 +262,8 @@ const HomeView = ({
                   animate={{ y: [0, -20, 0] }}
                   transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
                   src={buddyImg || ""}
-                  className="w-1/2 h-1/2 object-contain filter drop-shadow-[0_15px_15px_rgba(0,0,0,0.3)]"
+                  className="w-48 h-48 object-cover rounded-full border-4 border-white filter drop-shadow-[0_15px_15px_rgba(0,0,0,0.3)]"
                   alt="Buddi"
-                  style={{ mixBlendMode: 'multiply' }}
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               </div>
@@ -638,7 +637,7 @@ const GamesView = ({
                   isInvulnerable ? "opacity-50 animate-pulse" : "opacity-100"
                 )}
               >
-                <img src={buddyImg || ""} className="w-full h-full object-contain filter drop-shadow-[0_10px_10px_rgba(0,0,0,0.4)]" alt="Player" />
+                <img src={buddyImg || ""} className="w-full h-full object-cover rounded-full filter drop-shadow-[0_10px_10px_rgba(0,0,0,0.4)] border-4 border-white" alt="Player" />
               </motion.div>
 
               {/* Obstacles */}
@@ -795,7 +794,7 @@ const RoomView = ({ buddyImg, onUpdateBuddy }: { buddyImg: string | null, onUpda
           ) : null}
           <div className="absolute inset-0 w-full h-full" style={{ background: room || "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)" }} />
           <div className="absolute inset-0 flex items-center justify-center">
-            <img src={buddyImg || ""} className="w-1/3 h-1/3 object-contain filter drop-shadow-[0_20px_20px_rgba(0,0,0,0.4)]" alt="Buddi" />
+            <img src={buddyImg || ""} className="w-48 h-48 object-cover rounded-full filter drop-shadow-[0_20px_20px_rgba(0,0,0,0.4)] border-4 border-white mx-auto" alt="Buddi" />
           </div>
         </div>
         <div className="space-y-6">
