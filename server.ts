@@ -52,53 +52,33 @@ async function startServer() {
     });
   });
 
-  // --- Hugging Face: real AI image generation ---
+  // --- Free Unlimited Image Generation Proxy (Pollinations backend-to-backend) ---
   app.post("/api/hf-image", async (req, res) => {
     const { prompt } = req.body;
-    const hfToken = process.env.HF_TOKEN;
-    if (!hfToken) return res.status(500).json({ error: "HF_TOKEN not configured" });
     if (!prompt) return res.status(400).json({ error: "prompt required" });
 
-    // Attempt 1: SDXL (Often reliable on free tier)
     try {
-      let response = await fetch(
-        "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${hfToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ inputs: prompt }),
-        }
-      );
+      // Backend fetch to bypass all frontend browser caching problems entirely.
+      const seed = Math.floor(Math.random() * 10000000);
+      const encPrompt = encodeURIComponent(prompt + " masterpiece detailed");
+      const imageUrl = `https://image.pollinations.ai/prompt/${encPrompt}?seed=${seed}&nologo=true&width=512&height=512`;
 
-      // If SDXL fails, attempt 2: FLUX
-      if (!response.ok) {
-        console.warn("SDXL failed, trying FLUX.1-schnell...");
-        response = await fetch(
-          "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
-          {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${hfToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ inputs: prompt }),
-          }
-        );
-      }
+      const response = await fetch(imageUrl, {
+        headers: { "User-Agent": "HospitalBuddi-Server/1.0" }
+      });
 
       if (!response.ok) {
-        const errText = await response.text();
-        console.error("HF API error:", errText);
-        return res.status(response.status).json({ error: errText });
+        throw new Error(`Failed to fetch image: ${response.statusText}`);
       }
+
       const arrayBuffer = await response.arrayBuffer();
       const base64 = Buffer.from(arrayBuffer).toString("base64");
+
+      // Sending base64 means the frontend receives a pure data string, 
+      // which Chrome CANNOT fail to load or get stuck on cache with.
       res.json({ image: `data:image/jpeg;base64,${base64}` });
     } catch (err: any) {
-      console.error("HF image error:", err.message);
+      console.error("Image gen error:", err.message);
       res.status(500).json({ error: err.message });
     }
   });

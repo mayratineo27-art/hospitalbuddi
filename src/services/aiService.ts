@@ -48,23 +48,18 @@ async function callHFImage(prompt: string, isBackground = false): Promise<string
   if (imageCache[cacheKey]) return imageCache[cacheKey];
 
   try {
-    // Generate different seeds to avoid caching the same image for different prompts
-    const seed = Math.floor(Math.random() * 1000000);
-    const width = isBackground ? 1024 : 512;
-    const height = isBackground ? 576 : 512;
-    const model = isBackground ? "flux" : "turbo";
+    const res = await fetch("/api/hf-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
 
-    // Pollinations.ai is extremely fast and free, and supports CORS directly.
-    // It's much more stable than HF Free Tier for these types of requests.
-    const encPrompt = encodeURIComponent(prompt + (isBackground ? " 8k highly detailed colorful" : " white background clear vector style"));
-    const timestamp = Date.now();
-    const imageUrl = `https://image.pollinations.ai/prompt/${encPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=${model}&cb=${timestamp}`;
-
-    // Fetch it just to trigger generation and cache the result
-    const res = await fetch(imageUrl);
     if (res.ok) {
-      imageCache[cacheKey] = imageUrl;
-      return imageUrl;
+      const { image } = await res.json();
+      if (image) {
+        imageCache[cacheKey] = image;
+        return image;
+      }
     }
   } catch (err) {
     console.error("Image generation failed:", err);
