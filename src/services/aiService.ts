@@ -16,30 +16,62 @@ const BUDDY_PROMPTS: Record<string, string> = {
 };
 
 export async function generateBuddyImage(prompt: string): Promise<string> {
-  // Directly build the URL so the React <img> tag loads it natively.
-  // This bypasses any strict CORS or 403 blocks that Pollinations applies to JavaScript `fetch` and `Image` objects.
-  const seed = Math.floor(Math.random() * 1000000);
-  const encPrompt = encodeURIComponent(prompt + " white background clear vector style");
-  const timestamp = Date.now();
+  const p = prompt.toLowerCase();
 
-  return `https://image.pollinations.ai/prompt/${encPrompt}?width=512&height=512&seed=${seed}&nologo=true&model=turbo&cb=${timestamp}`;
+  // Decide which DiceBear collection fits best
+  let style = "adventurer";
+  let seed = "Leo"; // default
+
+  if (p.includes("superhero") || p.includes("héroe")) {
+    style = "avataaars";
+    seed = "Felix";
+  } else if (p.includes("astronaut") || p.includes("astronauta")) {
+    style = "bottts";
+    seed = "Astro";
+  } else if (p.includes("pirate") || p.includes("pirata")) {
+    style = "adventurer";
+    seed = "Jack";
+  } else if (p.includes("wizard") || p.includes("mago")) {
+    style = "adventurer";
+    seed = "Merlin";
+  } else if (p.includes("robot") || p.includes("cybernetic")) {
+    style = "bottts";
+    seed = "Robo";
+  }
+
+  // Use DiceBear API to generate high-quality, fully stable vector SVGs.
+  // We append a random salt if needed, but for specific characters a fixed seed is better.
+  return `https://api.dicebear.com/9.x/${style}/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
 }
 
 export async function generateEnvironmentImage(prompt: string): Promise<string> {
-  const seed = Math.floor(Math.random() * 1000000);
-  const encPrompt = encodeURIComponent(prompt + " 8k highly detailed colorful");
-  const timestamp = Date.now();
+  const seed = Math.floor(Math.random() * 1000);
 
-  const url = `https://image.pollinations.ai/prompt/${encPrompt}?width=1024&height=576&seed=${seed}&nologo=true&model=flux&cb=${timestamp}`;
+  // Extract a good keyword from the prompt
+  const p = prompt.toLowerCase();
+  let keyword = "bedroom,kids";
+  if (p.includes("castillo")) keyword = "castle,fantasy";
+  if (p.includes("bosque") || p.includes("jungla")) keyword = "forest,jungle";
+  if (p.includes("espacio") || p.includes("galaxia")) keyword = "space,stars";
+  if (p.includes("hielo")) keyword = "ice,snow";
+  if (p.includes("laboratorio")) keyword = "laboratory,science";
+  if (p.includes("dulces")) keyword = "candy,sweets";
+
+  const url = `https://loremflickr.com/1024/576/${keyword}?lock=${seed}`;
   return `url('${url}') center/cover no-repeat`;
 }
 
 export async function generateGameScenario(prompt: string): Promise<string> {
-  const seed = Math.floor(Math.random() * 1000000);
-  const encPrompt = encodeURIComponent(prompt + " vibrant kids game background cartoon");
-  const timestamp = Date.now();
+  const seed = Math.floor(Math.random() * 1000);
 
-  const url = `https://image.pollinations.ai/prompt/${encPrompt}?width=1024&height=576&seed=${seed}&nologo=true&model=flux&cb=${timestamp}`;
+  const p = prompt.toLowerCase();
+  let keyword = "game,landscape";
+  if (p.includes("espacio") || p.includes("galaxia")) keyword = "space,galaxy";
+  if (p.includes("jungla") || p.includes("bosque")) keyword = "jungle,forest";
+  if (p.includes("dulces")) keyword = "candy,colorful";
+  if (p.includes("hielo")) keyword = "ice,winter";
+
+  const url = `https://loremflickr.com/1024/576/${keyword}?lock=${seed}`;
   return `url('${url}') center/cover no-repeat`;
 }
 
