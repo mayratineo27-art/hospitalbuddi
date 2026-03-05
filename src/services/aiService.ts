@@ -16,15 +16,7 @@ const BUDDY_PROMPTS: Record<string, string> = {
 };
 
 export async function generateBuddyImage(prompt: string): Promise<string> {
-  const p = prompt.toLowerCase();
-  let key = "default";
-  if (p.includes("superhero") || p.includes("héroe")) key = "superhero";
-  else if (p.includes("astronaut") || p.includes("astronauta")) key = "astronaut";
-  else if (p.includes("pirate") || p.includes("pirata")) key = "pirate";
-  else if (p.includes("wizard") || p.includes("mago")) key = "mago";
-  else if (p.includes("robot") || p.includes("cybernetic")) key = "robot";
-
-  const hfImg = await callHFImage(BUDDY_PROMPTS[key]);
+  const hfImg = await callHFImage(prompt);
   return hfImg || GOKU_PLACEHOLDER;
 }
 
