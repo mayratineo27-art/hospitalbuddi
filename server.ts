@@ -52,30 +52,31 @@ async function startServer() {
     });
   });
 
-  // --- Free Unlimited Image Generation Proxy (Pollinations backend-to-backend) ---
+  // --- Free Unlimited Image Generation Proxy ---
   app.post("/api/hf-image", async (req, res) => {
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: "prompt required" });
 
     try {
-      // Backend fetch to bypass all frontend browser caching problems entirely.
       const seed = Math.floor(Math.random() * 10000000);
-      const encPrompt = encodeURIComponent(prompt + " masterpiece detailed");
-      const imageUrl = `https://image.pollinations.ai/prompt/${encPrompt}?seed=${seed}&nologo=true&width=512&height=512`;
+      const encPrompt = encodeURIComponent(prompt + " masterpiece highly detailed");
 
-      const response = await fetch(imageUrl, {
-        headers: { "User-Agent": "HospitalBuddi-Server/1.0" }
+      // Pollinations AI direct fetch with simulated browser headers to avoid Cloudflare 530 IP Blocks
+      const response = await fetch(`https://image.pollinations.ai/prompt/${encPrompt}?seed=${seed}&nologo=true&width=512&height=512`, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+        }
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.statusText}`);
+        throw new Error(`API Failed: ${response.statusText}`);
       }
 
       const arrayBuffer = await response.arrayBuffer();
       const base64 = Buffer.from(arrayBuffer).toString("base64");
 
-      // Sending base64 means the frontend receives a pure data string, 
-      // which Chrome CANNOT fail to load or get stuck on cache with.
       res.json({ image: `data:image/jpeg;base64,${base64}` });
     } catch (err: any) {
       console.error("Image gen error:", err.message);

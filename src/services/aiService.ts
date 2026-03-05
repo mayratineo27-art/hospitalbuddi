@@ -45,22 +45,30 @@ const imageCache: Record<string, string> = {};
 
 async function callHFImage(prompt: string, isBackground = false): Promise<string | null> {
   const cacheKey = prompt + (isBackground ? "_bg" : "_buddy");
-  if (imageCache[cacheKey]) return imageCache[cacheKey];
-
   try {
-    const res = await fetch("/api/hf-image", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt }),
-    });
+    const seed = Math.floor(Math.random() * 1000000);
+    const width = isBackground ? 1024 : 512;
+    const height = isBackground ? 576 : 512;
+    const model = isBackground ? "flux" : "turbo";
 
-    if (res.ok) {
-      const { image } = await res.json();
-      if (image) {
-        imageCache[cacheKey] = image;
-        return image;
-      }
-    }
+    const encPrompt = encodeURIComponent(prompt + (isBackground ? " 8k highly detailed colorful" : " white background clear vector style"));
+    const timestamp = Date.now();
+    const imageUrl = `https://image.pollinations.ai/prompt/${encPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=${model}&cb=${timestamp}`;
+
+    // Force browser to load the image natively to bypass fetch CORS/cache anomalies
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        imageCache[cacheKey] = imageUrl;
+        resolve(imageUrl);
+      };
+      img.onerror = () => {
+        console.error("Image generation natively failed.");
+        resolve(null);
+      };
+      img.src = imageUrl;
+    });
   } catch (err) {
     console.error("Image generation failed:", err);
   }
