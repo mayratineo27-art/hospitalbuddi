@@ -48,31 +48,39 @@ function getGradient(keyword: string): string {
   return "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
 }
 
-// In-memory cache for HF images (so same prompt isn't re-generated)
+// In-memory cache for images
 const imageCache: Record<string, string> = {};
 
-async function callHFImage(prompt: string): Promise<string | null> {
-  if (imageCache[prompt]) return imageCache[prompt];
+async function callHFImage(prompt: string, isBackground = false): Promise<string | null> {
+  const cacheKey = prompt + (isBackground ? "_bg" : "_buddy");
+  if (imageCache[cacheKey]) return imageCache[cacheKey];
+
   try {
     const res = await fetch("/api/hf-image", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt }),
     });
-    if (!res.ok) return null;
-    const { image } = await res.json();
-    if (image) imageCache[prompt] = image;
-    return image || null;
-  } catch {
-    return null;
+    if (res.ok) {
+      const { image } = await res.json();
+      if (image) {
+        imageCache[cacheKey] = image;
+        return image;
+      }
+    }
+  } catch (err) {
+    console.error("HF failed:", err);
   }
+
+  return null;
 }
 
 export async function generateEnvironmentImage(prompt: string): Promise<string> {
   const hfImg = await callHFImage(
-    `${prompt} bedroom for a video game character, cartoon style, vibrant colors, cozy, detailed, colorful lighting`
+    `${prompt} bedroom for a video game character, cartoon style, vibrant colors, cozy, detailed, colorful lighting`,
+    true
   );
-  return hfImg || getGradient(prompt);
+  return hfImg ? `url('${hfImg}') center/cover no-repeat` : getGradient(prompt);
 }
 
 export async function generateGameScenario(theme: string): Promise<string> {
@@ -83,9 +91,10 @@ export async function generateGameScenario(theme: string): Promise<string> {
     "Hielo": "ice and snow game level, frozen lake, icicles, aurora borealis, cartoon style",
   };
   const hfImg = await callHFImage(
-    prompts[theme] || `${theme} game level, cartoon style, vibrant colors, detailed background`
+    prompts[theme] || `${theme} game level, cartoon style, vibrant colors, detailed background`,
+    true
   );
-  return hfImg || getGradient(theme);
+  return hfImg ? `url('${hfImg}') center/cover no-repeat` : getGradient(theme);
 }
 
 // ── Text generation via Groq proxy ──

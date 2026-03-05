@@ -52,24 +52,43 @@ async function startServer() {
     });
   });
 
-  // --- Hugging Face FLUX.1-schnell: real AI image generation ---
+  // --- Hugging Face: real AI image generation ---
   app.post("/api/hf-image", async (req, res) => {
     const { prompt } = req.body;
     const hfToken = process.env.HF_TOKEN;
     if (!hfToken) return res.status(500).json({ error: "HF_TOKEN not configured" });
     if (!prompt) return res.status(400).json({ error: "prompt required" });
+
+    // Attempt 1: SDXL (Often reliable on free tier)
     try {
-      const response = await fetch(
-        "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
+      let response = await fetch(
+        "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
         {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${hfToken}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ inputs: prompt, parameters: { num_inference_steps: 4 } }),
+          body: JSON.stringify({ inputs: prompt }),
         }
       );
+
+      // If SDXL fails, attempt 2: FLUX
+      if (!response.ok) {
+        console.warn("SDXL failed, trying FLUX.1-schnell...");
+        response = await fetch(
+          "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
+          {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${hfToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ inputs: prompt }),
+          }
+        );
+      }
+
       if (!response.ok) {
         const errText = await response.text();
         console.error("HF API error:", errText);
