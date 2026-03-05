@@ -16,87 +16,34 @@ const BUDDY_PROMPTS: Record<string, string> = {
 };
 
 export async function generateBuddyImage(prompt: string): Promise<string> {
-  const hfImg = await callHFImage(prompt);
-  return hfImg || GOKU_PLACEHOLDER;
-}
+  // Directly build the URL so the React <img> tag loads it natively.
+  // This bypasses any strict CORS or 403 blocks that Pollinations applies to JavaScript `fetch` and `Image` objects.
+  const seed = Math.floor(Math.random() * 1000000);
+  const encPrompt = encodeURIComponent(prompt + " white background clear vector style");
+  const timestamp = Date.now();
 
-// ── CSS gradient fallbacks (instant, shown before HF image loads) ──
-const GRADIENTS: Record<string, string> = {
-  "galaxia": "radial-gradient(ellipse at top, #0f0c29 0%, #302b63 50%, #24243e 100%)",
-  "castillo": "linear-gradient(135deg, #8B5E3C 0%, #D2A679 50%, #8B5E3C 100%)",
-  "laboratorio": "linear-gradient(135deg, #0f4c75 0%, #1b6ca8 50%, #00d2ff 100%)",
-  "bosque": "linear-gradient(135deg, #1a4a0a 0%, #3a7d2e 50%, #52b812 100%)",
-  "espacio": "radial-gradient(ellipse at top, #070818 0%, #1a1a4e 50%, #0e0e2c 100%)",
-  "jungla": "linear-gradient(160deg, #1a4a0a 0%, #52b812 60%, #1e6b06 100%)",
-  "dulces": "linear-gradient(135deg, #ff9ff3 0%, #ffeaa7 50%, #fd79a8 100%)",
-  "hielo": "linear-gradient(135deg, #a8edea 0%, #74b9ff 60%, #dfe6f9 100%)",
-};
-
-function getGradient(keyword: string): string {
-  const k = keyword.toLowerCase();
-  for (const [key, grad] of Object.entries(GRADIENTS)) {
-    if (k.includes(key)) return grad;
-  }
-  return "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
-}
-
-// In-memory cache for images
-const imageCache: Record<string, string> = {};
-
-async function callHFImage(prompt: string, isBackground = false): Promise<string | null> {
-  const cacheKey = prompt + (isBackground ? "_bg" : "_buddy");
-  try {
-    const seed = Math.floor(Math.random() * 1000000);
-    const width = isBackground ? 1024 : 512;
-    const height = isBackground ? 576 : 512;
-    const model = isBackground ? "flux" : "turbo";
-
-    const encPrompt = encodeURIComponent(prompt + (isBackground ? " 8k highly detailed colorful" : " white background clear vector style"));
-    const timestamp = Date.now();
-    const imageUrl = `https://image.pollinations.ai/prompt/${encPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=${model}&cb=${timestamp}`;
-
-    // Force browser to load the image natively to bypass fetch CORS/cache anomalies
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        imageCache[cacheKey] = imageUrl;
-        resolve(imageUrl);
-      };
-      img.onerror = () => {
-        console.error("Image generation natively failed.");
-        resolve(null);
-      };
-      img.src = imageUrl;
-    });
-  } catch (err) {
-    console.error("Image generation failed:", err);
-  }
-
-  return null;
+  return `https://image.pollinations.ai/prompt/${encPrompt}?width=512&height=512&seed=${seed}&nologo=true&model=turbo&cb=${timestamp}`;
 }
 
 export async function generateEnvironmentImage(prompt: string): Promise<string> {
-  const hfImg = await callHFImage(
-    `${prompt} bedroom for a video game character, cartoon style, vibrant colors, cozy, detailed, colorful lighting`,
-    true
-  );
-  return hfImg ? `url('${hfImg}') center/cover no-repeat` : getGradient(prompt);
+  const seed = Math.floor(Math.random() * 1000000);
+  const encPrompt = encodeURIComponent(prompt + " 8k highly detailed colorful");
+  const timestamp = Date.now();
+
+  const url = `https://image.pollinations.ai/prompt/${encPrompt}?width=1024&height=576&seed=${seed}&nologo=true&model=flux&cb=${timestamp}`;
+  return `url('${url}') center/cover no-repeat`;
 }
 
-export async function generateGameScenario(theme: string): Promise<string> {
-  const prompts: Record<string, string> = {
-    "Espacio": "outer space game level, stars, nebula, floating platforms, vibrant cartoon style, colorful",
-    "Jungla": "tropical jungle game level, lush greenery, waterfalls, cartoon style, vibrant colors",
-    "Dulces": "candy land game level, candy cane platforms, lollipops, cotton candy clouds, cartoon style",
-    "Hielo": "ice and snow game level, frozen lake, icicles, aurora borealis, cartoon style",
-  };
-  const hfImg = await callHFImage(
-    prompts[theme] || `${theme} game level, cartoon style, vibrant colors, detailed background`,
-    true
-  );
-  return hfImg ? `url('${hfImg}') center/cover no-repeat` : getGradient(theme);
+export async function generateGameScenario(prompt: string): Promise<string> {
+  const seed = Math.floor(Math.random() * 1000000);
+  const encPrompt = encodeURIComponent(prompt + " vibrant kids game background cartoon");
+  const timestamp = Date.now();
+
+  const url = `https://image.pollinations.ai/prompt/${encPrompt}?width=1024&height=576&seed=${seed}&nologo=true&model=flux&cb=${timestamp}`;
+  return `url('${url}') center/cover no-repeat`;
 }
+
+// Old functions removed for direct URL loading.
 
 // ── Text generation via Groq proxy ──
 async function callTextAPI(systemPrompt: string, userPrompt: string, maxTokens = 200): Promise<string | null> {
