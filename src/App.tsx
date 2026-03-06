@@ -263,7 +263,7 @@ const HomeView = ({
                   transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
                   src={buddyImg || ""}
                   className="w-48 h-48 object-cover rounded-full border-4 border-white filter drop-shadow-[0_15px_15px_rgba(0,0,0,0.3)]"
-                  alt="Buddi"
+                  alt="GameBuddy"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               </div>
@@ -304,7 +304,7 @@ const HomeView = ({
         {/* BUDDY CARE PANEL */}
         <div className="bg-white p-6 rounded-[3rem] shadow-xl border-b-8 border-pink-100">
           <h2 className="text-xl font-black mb-4 flex items-center gap-2 text-pink-500 uppercase italic">
-            <Heart className="fill-pink-500" /> Cuidado Buddi
+            <Heart className="fill-pink-500" /> Cuidado GameBuddy
           </h2>
           <div className="grid grid-cols-3 gap-3">
             <motion.button
@@ -426,7 +426,7 @@ const GamesView = ({
   const startGame = () => {
     if (energy < 15) {
       if (soundEnabled) playHitSound();
-      alert("¡Tu Buddi está muy cansado para jugar! Llévalo a dormir en Inicio.");
+      alert("¡Tu GameBuddy está muy cansado para jugar! Llévalo a dormir en Inicio.");
       return;
     }
     const newEnergy = Math.max(0, energy - 15);
@@ -794,7 +794,7 @@ const RoomView = ({ buddyImg, onUpdateBuddy }: { buddyImg: string | null, onUpda
           ) : null}
           <div className="absolute inset-0 w-full h-full" style={{ background: room || "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)" }} />
           <div className="absolute inset-0 flex items-center justify-center">
-            <img src={buddyImg || ""} className="w-48 h-48 object-cover rounded-full filter drop-shadow-[0_20px_20px_rgba(0,0,0,0.4)] border-4 border-white mx-auto" alt="Buddi" />
+            <img src={buddyImg || ""} className="w-48 h-48 object-cover rounded-full filter drop-shadow-[0_20px_20px_rgba(0,0,0,0.4)] border-4 border-white mx-auto" alt="GameBuddy" />
           </div>
         </div>
         <div className="space-y-6">
@@ -817,7 +817,7 @@ const RoomView = ({ buddyImg, onUpdateBuddy }: { buddyImg: string | null, onUpda
 
           <div className="bg-white p-8 rounded-[3rem] shadow-xl space-y-4">
             <h3 className="font-black text-xl mb-4 flex items-center gap-2">
-              <Smile className="text-blue-500" /> Estilo de Buddi
+              <Smile className="text-blue-500" /> Estilo de GameBuddy
             </h3>
             <div className="grid grid-cols-2 gap-2">
               {buddyStyles.map(s => (
@@ -863,7 +863,7 @@ const ConnectView = ({ onJoinRoom, currentRoom }: { onJoinRoom: (code: string) =
       <div className="text-center space-y-2">
         <h2 className="text-4xl font-black text-blue-600 uppercase italic">Conectar con Amigos</h2>
         <p className="text-gray-600 font-bold max-w-lg mx-auto">
-          ¿Estás en el hospital o tienes internet lento? ¡No te preocupes! Opciones súper ligeras que gastan muy pocos megas para jugar juntos.
+          ¿Estás de viaje o tienes internet lento? ¡No te preocupes! Opciones súper ligeras que gastan muy pocos megas para jugar juntos.
         </p>
       </div>
 
@@ -994,7 +994,7 @@ const ConnectView = ({ onJoinRoom, currentRoom }: { onJoinRoom: (code: string) =
         <div>
           <h4 className="font-black text-yellow-800">Modo Ahorro de Datos</h4>
           <p className="text-sm font-bold text-yellow-700/80">
-            Al usar Códigos de Sala en Perú, el juego desactiva la descarga de imágenes pesadas y prioriza usar la red WiFi local del hospital para mantenerte conectado casi sin gastar saldo.
+            Al usar Códigos de Sala en Perú, el juego desactiva la descarga de imágenes pesadas y prioriza usar la red WiFi local para mantenerte conectado casi sin gastar saldo.
           </p>
         </div>
       </div>
@@ -1020,7 +1020,7 @@ const LoginView = ({ onLogin }: { onLogin: (profile: UserProfile) => void }) => 
     setError("");
 
     // Pseudo-email strategy for kids login
-    const email = `${nickname.toLowerCase().replace(/[^a-z0-9]/g, '')}_${pin}@hospitalbuddi.com`;
+    const email = `${nickname.toLowerCase().replace(/[^a-z0-9]/g, '')}_${pin}@gamebuddy.com`;
     const password = `pin-${pin}-${nickname}`;
 
     try {
@@ -1075,8 +1075,8 @@ const LoginView = ({ onLogin }: { onLogin: (profile: UserProfile) => void }) => 
         className="bg-white p-10 rounded-[3rem] shadow-2xl border-b-8 border-gray-200 max-w-md w-full relative z-10"
       >
         <div className="text-center mb-8">
-          <Smile size={60} className="mx-auto text-blue-500 mb-4" />
-          <h1 className="text-4xl font-black text-blue-600 italic uppercase">Buddi Login</h1>
+          <Gamepad2 size={60} className="mx-auto text-blue-500 mb-4" />
+          <h1 className="text-4xl font-black text-blue-600 italic uppercase">Game Buddy Login</h1>
           <p className="text-gray-500 font-bold mt-2">Guarda a tu mascota en la nube</p>
         </div>
 
@@ -1260,11 +1260,11 @@ export default function App() {
           className="flex items-center gap-4"
         >
           <div className="w-16 h-16 bg-blue-600 rounded-[1.5rem] shadow-[0_8px_0_rgb(30,58,138)] flex items-center justify-center border-4 border-white">
-            <Heart className="text-white fill-white" size={32} />
+            <Gamepad2 className="text-white fill-white" size={32} />
           </div>
           <div>
-            <h1 className="text-4xl font-black tracking-tighter text-blue-700 italic uppercase leading-none">HospitalBuddi</h1>
-            <p className="text-xs font-black text-blue-400 uppercase tracking-widest">Nivel 12 • Pro Player</p>
+            <h1 className="text-4xl font-black tracking-tighter text-blue-700 italic uppercase leading-none">GAME_BUDDY_TEST_V3</h1>
+            <p className="text-xs font-black text-blue-400 uppercase tracking-widest">NIVEL 12 TEST • Pro Player</p>
           </div>
         </motion.div>
 

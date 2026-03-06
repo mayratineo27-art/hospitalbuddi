@@ -1,3 +1,4 @@
+import "dotenv/config";
 // AI API routes - all AI calls happen server-side so keys are runtime env vars
 import express from "express";
 import { createServer } from "http";
@@ -21,63 +22,37 @@ async function startServer() {
   // Parse JSON bodies for API routes
   app.use(express.json());
 
-  // --- Image Proxy: fetches Pollinations.ai images server-side to avoid ORB/CORS blocks ---
-  app.get("/api/image-proxy", (req, res) => {
-    const url = req.query.url as string;
-    if (!url || !url.startsWith("https://image.pollinations.ai/")) {
-      return res.status(400).json({ error: "Invalid proxy URL" });
-    }
-    const parsedUrl = new URL(url);
-    const options = {
-      hostname: parsedUrl.hostname,
-      path: parsedUrl.pathname + parsedUrl.search,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; HospitalBuddi/1.0)",
-        "Accept": "image/webp,image/png,image/jpeg,*/*",
-        "Referer": "https://image.pollinations.ai/",
-      }
-    };
-    https.get(options, (imageRes) => {
-      const contentType = imageRes.headers["content-type"] || "image/jpeg";
-      res.setHeader("Content-Type", contentType);
-      res.setHeader("Cache-Control", "public, max-age=86400");
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      if (!contentType.startsWith("image/")) {
-        return res.status(503).end();
-      }
-      imageRes.pipe(res);
-    }).on("error", (err) => {
-      console.error("Image proxy error:", err.message);
-      res.status(500).json({ error: err.message });
-    });
-  });
+  // --- AI Image Generation (Hugging Face / FLUX) ---
 
-  // --- Free Unlimited Image Generation Proxy ---
+  // --- High Quality Image Generation Proxy (Hugging Face FLUX.1) ---
   app.post("/api/hf-image", async (req, res) => {
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: "prompt required" });
+    if (!process.env.HF_TOKEN) return res.status(500).json({ error: "HF_TOKEN not configured" });
 
     try {
-      const seed = Math.floor(Math.random() * 10000000);
-      const encPrompt = encodeURIComponent(prompt + " masterpiece highly detailed");
-
-      // Pollinations AI direct fetch with simulated browser headers to avoid Cloudflare 530 IP Blocks
-      const response = await fetch(`https://image.pollinations.ai/prompt/${encPrompt}?seed=${seed}&nologo=true&width=512&height=512`, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-          "Accept-Language": "en-US,en;q=0.9",
+      // Using black-forest-labs/FLUX.1-schnell for ultra-high quality and speed
+      const response = await fetch(
+        "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.HF_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+          body: JSON.stringify({ inputs: prompt }),
         }
-      });
+      );
 
       if (!response.ok) {
-        throw new Error(`API Failed: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`HF API Failed: ${response.status} ${errorText}`);
       }
 
       const arrayBuffer = await response.arrayBuffer();
       const base64 = Buffer.from(arrayBuffer).toString("base64");
 
-      res.json({ image: `data:image/jpeg;base64,${base64}` });
+      res.json({ image: `data:image/webp;base64,${base64}` });
     } catch (err: any) {
       console.error("Image gen error:", err.message);
       res.status(500).json({ error: err.message });

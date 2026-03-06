@@ -15,64 +15,41 @@ const BUDDY_PROMPTS: Record<string, string> = {
   robot: "cute cartoon robot child with glowing eyes, metallic body, white background, anime chibi style",
 };
 
-export async function generateBuddyImage(prompt: string): Promise<string> {
-  const p = prompt.toLowerCase();
-
-  // Decide which DiceBear collection fits best
-  let style = "adventurer";
-  let seed = "Leo"; // default
-
-  if (p.includes("superhero") || p.includes("héroe")) {
-    style = "avataaars";
-    seed = "Felix";
-  } else if (p.includes("astronaut") || p.includes("astronauta")) {
-    style = "bottts";
-    seed = "Astro";
-  } else if (p.includes("pirate") || p.includes("pirata")) {
-    style = "adventurer";
-    seed = "Jack";
-  } else if (p.includes("wizard") || p.includes("mago")) {
-    style = "adventurer";
-    seed = "Merlin";
-  } else if (p.includes("robot") || p.includes("cybernetic")) {
-    style = "bottts";
-    seed = "Robo";
+export async function generateAIImage(prompt: string): Promise<string | null> {
+  try {
+    const res = await fetch("/api/hf-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const { image } = await res.json();
+    return image || null;
+  } catch (err) {
+    console.error("AI Image error:", err);
+    return null;
   }
+}
 
-  // Use DiceBear API to generate high-quality, fully stable vector SVGs.
-  // We append a random salt if needed, but for specific characters a fixed seed is better.
-  return `https://api.dicebear.com/9.x/${style}/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+export async function generateBuddyImage(prompt: string): Promise<string> {
+  // Enhanced prompt for premium 3D game character look
+  const fullPrompt = `${prompt}, 3D Disney Pixar style, cute game character, vibrant colors, soft lighting, highly detailed, centered, full body, white background, masterpiece`;
+  const img = await generateAIImage(fullPrompt);
+  return img || `https://api.dicebear.com/9.x/adventurer/svg?seed=${prompt}&backgroundColor=b6e3f4`;
 }
 
 export async function generateEnvironmentImage(prompt: string): Promise<string> {
-  const seed = Math.floor(Math.random() * 1000);
+  // Enhanced prompt for premium game environment look
+  const fullPrompt = `${prompt}, stunning game landscape, 8k resolution, cinematic lighting, concept art, vibrant, immersive, masterpiece`;
+  const img = await generateAIImage(fullPrompt);
+  if (img) return `url('${img}') center/cover no-repeat`;
 
-  // Extract a good keyword from the prompt
-  const p = prompt.toLowerCase();
-  let keyword = "bedroom,kids";
-  if (p.includes("castillo")) keyword = "castle,fantasy";
-  if (p.includes("bosque") || p.includes("jungla")) keyword = "forest,jungle";
-  if (p.includes("espacio") || p.includes("galaxia")) keyword = "space,stars";
-  if (p.includes("hielo")) keyword = "ice,snow";
-  if (p.includes("laboratorio")) keyword = "laboratory,science";
-  if (p.includes("dulces")) keyword = "candy,sweets";
-
-  const url = `https://loremflickr.com/1024/576/${keyword}?lock=${seed}`;
-  return `url('${url}') center/cover no-repeat`;
+  // Fallback to a nice gradient if AI fails
+  return `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`;
 }
 
 export async function generateGameScenario(prompt: string): Promise<string> {
-  const seed = Math.floor(Math.random() * 1000);
-
-  const p = prompt.toLowerCase();
-  let keyword = "game,landscape";
-  if (p.includes("espacio") || p.includes("galaxia")) keyword = "space,galaxy";
-  if (p.includes("jungla") || p.includes("bosque")) keyword = "jungle,forest";
-  if (p.includes("dulces")) keyword = "candy,colorful";
-  if (p.includes("hielo")) keyword = "ice,winter";
-
-  const url = `https://loremflickr.com/1024/576/${keyword}?lock=${seed}`;
-  return `url('${url}') center/cover no-repeat`;
+  return generateEnvironmentImage(prompt);
 }
 
 // Old functions removed for direct URL loading.
@@ -96,8 +73,8 @@ async function callTextAPI(systemPrompt: string, userPrompt: string, maxTokens =
 
 export async function generateStoryContent(topic: string) {
   const result = await callTextAPI(
-    "Eres un cuentacuentos amigable para niños. Tu objetivo es hacerlos sentir valientes y felices. Escribe siempre en español.",
-    `Escribe una historia muy corta, alentadora y mágica para un niño en un hospital sobre ${topic}. Máximo 100 palabras. Usa emojis.`,
+    "Eres un cuentacuentos amigable para niños. Tu objetivo es hacerlos vivir aventuras épicas. Escribe siempre en español.",
+    `Escribe una historia muy corta, alentadora y mágica para un niño sobre ${topic}. Máximo 100 palabras. Usa emojis.`,
     200
   );
   return result || "¡Eres el héroe de tu propia historia! ✨🦸";
@@ -106,7 +83,7 @@ export async function generateStoryContent(topic: string) {
 export async function generateCheerMessage() {
   const result = await callTextAPI(
     "Eres un compañero virtual amigable para niños. Tu objetivo es hacerlos sonreír.",
-    "Genera un mensaje de ánimo muy corto (máximo 15 palabras) y divertido para un niño en un hospital. Usa emojis. En ESPAÑOL. SOLO EL MENSAJE, nada más.",
+    "Genera un mensaje de ánimo muy corto (máximo 15 palabras) y divertido para un jugador. Usa emojis. En ESPAÑOL. SOLO EL MENSAJE, nada más.",
     50
   );
   return result || "¡Eres un campeón! ✨";
