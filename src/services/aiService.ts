@@ -18,10 +18,6 @@ const BUDDY_PROMPTS: Record<string, string> = {
 // --- Scene Generation ---
 export const MAIN_SCENE_PROMPT = "cute chibi anime hero with spiky black hair, orange blue outfit, friendly smile, jumping on floating islands, colorful fantasy sky world, children video game environment, pixar style lighting, 3D cartoon game art, vibrant colors, highly detailed";
 
-export function getPollinationsUrl(prompt: string) {
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1280&height=720&nologo=true&seed=${Math.floor(Math.random() * 1000000)}`;
-}
-
 export async function generateAIImage(prompt: string): Promise<string | null> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s for DALL-E 3
@@ -65,7 +61,7 @@ export async function generateAIImage(prompt: string): Promise<string | null> {
   if (prompt.toLowerCase().includes("goku")) {
     return `https://api.dicebear.com/9.x/adventurer/svg?seed=Goku${seed}&backgroundColor=ff8c00&flip=true`;
   }
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&nologo=true`;
+  return `https://api.dicebear.com/9.x/shapes/svg?seed=${seed}&backgroundColor=e2e8f0`;
 }
 
 export async function generateBuddyImage(prompt: string): Promise<string> {
@@ -85,13 +81,13 @@ export async function generateEnvironmentImage(prompt: string): Promise<string> 
   return `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`;
 }
 
-export async function generateGameScenario(prompt: string): Promise<string> {
+export async function generateGameScenario(prompt: string): Promise<string | null> {
   const fullPrompt = `${prompt}, high quality game world, children adventure style, vibrant`;
-  return getPollinationsUrl(fullPrompt);
+  return generateAIImage(fullPrompt);
 }
 
-export function generateMainSceneUrl() {
-  return getPollinationsUrl(MAIN_SCENE_PROMPT);
+export async function generateMainSceneUrl(): Promise<string | null> {
+  return generateAIImage(MAIN_SCENE_PROMPT);
 }
 
 // Old functions removed for direct URL loading.

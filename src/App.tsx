@@ -781,8 +781,9 @@ const RoomView = ({ buddyImg, onUpdateBuddy }: { buddyImg: string | null, onUpda
 
   const changeRoom = async (style: string) => {
     setLoading(true);
-    const img = await generateEnvironmentImage(`A futuristic ${style} bedroom for a video game character, colorful, neon lights, cozy`);
+    const img = await generateEnvironmentImage(`A futuristic ${style} bedroom for a video game character, colorful, neon lights, cozy, Pixar style`);
     setRoom(img);
+    (window as any).gameSceneImg = null; // Clear main scene override
     setLoading(false);
   };
 
@@ -805,7 +806,18 @@ const RoomView = ({ buddyImg, onUpdateBuddy }: { buddyImg: string | null, onUpda
             </div>
           ) : null}
 
-          {(window as any).gameSceneImg ? (
+          {/* Always show image - use room URL if set, otherwise use gameSceneImg */}
+          {room && room.startsWith('https') ? (
+            <img
+              src={room}
+              className="w-full h-full object-cover"
+              alt="Room Scene"
+              style={{ borderRadius: '20px' }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          ) : (window as any).gameSceneImg ? (
             <img
               src={(window as any).gameSceneImg}
               className="w-full h-full object-cover"
@@ -1189,19 +1201,23 @@ export default function App() {
         }
         keysToDelete.forEach(k => localStorage.removeItem(k));
 
-        // Show orange dragon placeholder immediately, then replace with HF-generated Goku
+        // Show orange dragon placeholder immediately, then replace with generated images
         setBuddyImg(`data:image/svg+xml;charset=utf-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="60" fill="#FF8C00"/><text x="60" y="75" text-anchor="middle" font-size="52">🐉</text></svg>')}`);
-        setLoading(false);
-        // Generate both in parallel: Goku avatar + room background (HF takes ~10-15s)
+        setLoading(true);
+
+        // Fetch scene, buddy, and environment safely with real AI APIs
         Promise.all([
-          generateBuddyImage("Goku from Dragon Ball Z, chibi anime style, orange gi, spiky black hair, energetic pose"),
-          generateEnvironmentImage("A vibrant, colorful game lobby with floating islands and neon lights"),
-        ]).then(([buddy, room]) => {
-          setBuddyImg(buddy);
-          setRoomImg(room);
-          // NEW: Initial Scene Generation using Pollinations for the presentation
-          setSceneImg(generateMainSceneUrl());
-        }).catch(() => setRoomImg("linear-gradient(135deg, #667eea 0%, #764ba2 100%)"))
+          generateMainSceneUrl().catch(() => null),
+          generateBuddyImage("Goku from Dragon Ball Z, chibi anime style, orange gi, spiky black hair, energetic pose").catch(() => null),
+          generateEnvironmentImage("A vibrant, colorful game lobby with floating islands and neon lights").catch(() => null),
+        ]).then(([scene, buddy, room]) => {
+          if (scene) {
+            setSceneImg(scene);
+            (window as any).gameSceneImg = scene;
+          }
+          if (buddy) setBuddyImg(buddy);
+          if (room) setRoomImg(room);
+        }).finally(() => setLoading(false));
       } catch (error) {
         console.error("Error loading initial data:", error);
       } finally {
@@ -1233,9 +1249,18 @@ export default function App() {
   };
 
   const handleUpdateBuddy = async (stylePrompt: string) => {
-    const fullPrompt = `${stylePrompt}, Stumble Guys style, cute version, energetic pose, vibrant colors`;
+    // Generate Buddy
+    const fullPrompt = `Goku Dragon Ball, ${stylePrompt}, chibi anime style, vibrant colors, white background, full body`;
     const newBuddy = await generateBuddyImage(fullPrompt);
     if (newBuddy) setBuddyImg(newBuddy);
+
+    // Also update scene to show the buddy in full scene
+    const scenePrompt = `Goku Dragon Ball character, ${stylePrompt}, in a colorful game world environment, Pixar 3D cartoon style, vibrant`;
+    const newScene = await generateAIImage(scenePrompt);
+    if (newScene) {
+      setSceneImg(newScene);
+      (window as any).gameSceneImg = newScene;
+    }
   };
 
   const handleJoinRoom = (code: string) => {
