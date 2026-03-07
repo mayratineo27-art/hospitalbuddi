@@ -264,7 +264,6 @@ const HomeView = ({
                   src={buddyImg || ""}
                   className="w-48 h-48 object-cover rounded-full border-4 border-white filter drop-shadow-[0_15px_15px_rgba(0,0,0,0.3)]"
                   alt="Game_Buddy"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               </div>
 
