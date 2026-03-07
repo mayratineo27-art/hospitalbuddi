@@ -32,9 +32,9 @@ async function startServer() {
     if (!process.env.HF_TOKEN) return res.status(500).json({ error: "HF_TOKEN not configured" });
 
     try {
-      // Using black-forest-labs/FLUX.1-schnell for ultra-high quality and speed
+      // Using black-forest-labs/FLUX.1-schnell via the new router endpoint
       const response = await fetch(
-        "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
+        "https://router.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
         {
           headers: {
             Authorization: `Bearer ${process.env.HF_TOKEN}`,
@@ -67,23 +67,7 @@ async function startServer() {
     if (!process.env.GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
 
     try {
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-      // Note: Imagen 3 availability via the SDK might vary. 
-      // We use the stable endpoint logic or the SDK if supported.
-      const model = genAI.getGenerativeModel({ model: "imagen-3.0-generate-001" });
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-
-      // Handle the case where the model returns an image (if supported in this version)
-      // or if we need to call a specific endpoint for Imagen.
-      // Since SDK support for Imagen is evolving, we'll implement a robust fallback or check.
-
-      // For now, if generateContent doesn't return an image, we'll try a direct fetch to the Imagen API
-      // if the SDK doesn't have a dedicated method yet.
-      // Actually, standard Gemini models don't return images via generateContent.
-      // Imagen 3 is usually accessed via a specific Imagen API.
-
+      // Imagen 3 requires a direct fetch to the predict endpoint, not the standard SDK generateContent
       const imagenUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${process.env.GEMINI_API_KEY}`;
 
       const imagenResponse = await fetch(imagenUrl, {
@@ -103,16 +87,20 @@ async function startServer() {
 
       if (!imagenResponse.ok) {
         const errorText = await imagenResponse.text();
+        // If Imagen 3 is not available, try a fallback model or throw to trigger the HF fallback in frontend
         throw new Error(`Gemini Imagen API Failed: ${imagenResponse.status} ${errorText}`);
       }
 
       const data = await imagenResponse.json();
-      const base64Image = data.predictions[0].bytesBase64Encoded;
 
+      if (!data.predictions || !data.predictions[0] || !data.predictions[0].bytesBase64Encoded) {
+        throw new Error("Invalid response from Gemini Imagen API");
+      }
+
+      const base64Image = data.predictions[0].bytesBase64Encoded;
       res.json({ image: `data:image/png;base64,${base64Image}` });
     } catch (err: any) {
       console.error("Gemini Image error:", err.message);
-      // Fallback to HF if Gemini fails, to ensure some image is generated during presentation
       res.status(500).json({ error: err.message });
     }
   });
