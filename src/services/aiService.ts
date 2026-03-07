@@ -17,12 +17,23 @@ const BUDDY_PROMPTS: Record<string, string> = {
 
 export async function generateAIImage(prompt: string): Promise<string | null> {
   try {
-    const res = await fetch("/api/hf-image", {
+    const res = await fetch("/api/gemini-image", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) {
+      // Fallback to Hugging Face if Gemini fails
+      console.warn("Gemini failed, falling back to HF...");
+      const hfRes = await fetch("/api/hf-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      if (!hfRes.ok) throw new Error(await hfRes.text());
+      const { image } = await hfRes.json();
+      return image || null;
+    }
     const { image } = await res.json();
     return image || null;
   } catch (err) {
