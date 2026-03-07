@@ -29,8 +29,6 @@ async function startServer() {
   app.post("/api/hf-image", async (req, res) => {
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: "prompt required" });
-    if (!process.env.HF_TOKEN) return res.status(500).json({ error: "HF_TOKEN not configured" });
-
     try {
       // Using black-forest-labs/FLUX.1-schnell via the new router endpoint
       const response = await fetch(
@@ -39,6 +37,7 @@ async function startServer() {
           headers: {
             Authorization: `Bearer ${process.env.HF_TOKEN}`,
             "Content-Type": "application/json",
+            "x-use-cache": "false"
           },
           method: "POST",
           body: JSON.stringify({ inputs: prompt }),
@@ -52,10 +51,9 @@ async function startServer() {
 
       const arrayBuffer = await response.arrayBuffer();
       const base64 = Buffer.from(arrayBuffer).toString("base64");
-
       res.json({ image: `data:image/webp;base64,${base64}` });
     } catch (err: any) {
-      console.error("Image gen error:", err.message);
+      console.error("HF Image gen error:", err.message);
       res.status(500).json({ error: err.message });
     }
   });
@@ -67,38 +65,29 @@ async function startServer() {
     if (!process.env.GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
 
     try {
-      // Imagen 3 requires a direct fetch to the predict endpoint, not the standard SDK generateContent
+      // Direct call to the Imagen 3 predict endpoint
       const imagenUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${process.env.GEMINI_API_KEY}`;
 
       const imagenResponse = await fetch(imagenUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           instances: [{ prompt }],
-          parameters: {
-            sampleCount: 1,
-            aspectRatio: "1:1",
-            outputMimeType: "image/png"
-          }
+          parameters: { sampleCount: 1, aspectRatio: "1:1", outputMimeType: "image/png" }
         }),
       });
 
       if (!imagenResponse.ok) {
         const errorText = await imagenResponse.text();
-        // If Imagen 3 is not available, try a fallback model or throw to trigger the HF fallback in frontend
         throw new Error(`Gemini Imagen API Failed: ${imagenResponse.status} ${errorText}`);
       }
 
       const data = await imagenResponse.json();
-
       if (!data.predictions || !data.predictions[0] || !data.predictions[0].bytesBase64Encoded) {
-        throw new Error("Invalid response from Gemini Imagen API");
+        throw new Error("Invalid response from Gemini Imagen API. Check if your API Key has Imagen 3 access.");
       }
 
-      const base64Image = data.predictions[0].bytesBase64Encoded;
-      res.json({ image: `data:image/png;base64,${base64Image}` });
+      res.json({ image: `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}` });
     } catch (err: any) {
       console.error("Gemini Image error:", err.message);
       res.status(500).json({ error: err.message });

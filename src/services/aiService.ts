@@ -7,12 +7,12 @@
 const GOKU_PLACEHOLDER = `data:image/svg+xml;charset=utf-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="60" fill="#FF8C00"/><text x="60" y="75" text-anchor="middle" font-size="52" font-family="serif">🐉</text></svg>')}`;
 
 const BUDDY_PROMPTS: Record<string, string> = {
-  default: "Goku from Dragon Ball Super, chibi anime style, orange gi, spiky black hair, friendly smile, fullbody, white background, highly detailed cartoon",
-  superhero: "cartoon superhero child with cape and mask, flying pose, colorful suit, white background, anime style",
-  astronaut: "cute cartoon astronaut child in space suit with helmet, floating, white background, anime chibi style",
-  pirate: "friendly cartoon pirate child with hat and eye patch, white background, anime chibi style",
-  mago: "little cartoon wizard with magic hat and wand, sparks, white background, anime chibi style",
-  robot: "cute cartoon robot child with glowing eyes, metallic body, white background, anime chibi style",
+  default: "Son Goku from Dragon Ball Z, iconic orange martial arts gi with blue undershirt and belt, spiky black hair, friendly and energetic expression, full body standing pose, anime style, high quality illustration, white background",
+  superhero: "cute superhero child version of goku with a red cape and heroic mask, colorful suit, standing pose, anime style, white background",
+  astronaut: "Goku wearing a detailed high-tech astronaut space suit, holding a helmet, smiling, space hero theme, anime style, white background",
+  pirate: "Goku as a friendly pirate captain with a captain hat and treasure map, adventurous pose, anime style, white background",
+  mago: "Goku as a powerful martial arts wizard with a glowing magic aura and a mystical staff, anime style, white background",
+  robot: "Cybernetic Goku, android version with glowing blue energy lines and robotic armor, anime style, white background",
 };
 
 export async function generateAIImage(prompt: string): Promise<string | null> {
@@ -43,10 +43,11 @@ export async function generateAIImage(prompt: string): Promise<string | null> {
 }
 
 export async function generateBuddyImage(prompt: string): Promise<string> {
-  // Enhanced prompt for premium 3D game character look
-  const fullPrompt = `${prompt}, 3D Disney Pixar style, cute game character, vibrant colors, soft lighting, highly detailed, centered, full body, white background, masterpiece`;
+  // Enhanced prompt for premium 3D anime look, very specific for Goku
+  const fullPrompt = `${prompt}, masterpiece, 8k resolution, cinematic lighting, sharp focus, 3D render style mixed with anime, vibrant colors, centered, full body, white background`;
   const img = await generateAIImage(fullPrompt);
-  return img || `https://api.dicebear.com/9.x/adventurer/svg?seed=${prompt}&backgroundColor=b6e3f4`;
+  // Using a more suitable Goku-like fallback seed if everything fails
+  return img || `https://api.dicebear.com/9.x/adventurer/svg?seed=Goku&backgroundColor=ff8c00`;
 }
 
 export async function generateEnvironmentImage(prompt: string): Promise<string> {
