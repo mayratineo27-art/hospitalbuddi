@@ -263,7 +263,7 @@ const HomeView = ({
                   transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
                   src={buddyImg || ""}
                   className="w-48 h-48 object-cover rounded-full border-4 border-white filter drop-shadow-[0_15px_15px_rgba(0,0,0,0.3)]"
-                  alt="GameBuddy"
+                  alt="Game_Buddy"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               </div>
@@ -304,7 +304,7 @@ const HomeView = ({
         {/* BUDDY CARE PANEL */}
         <div className="bg-white p-6 rounded-[3rem] shadow-xl border-b-8 border-pink-100">
           <h2 className="text-xl font-black mb-4 flex items-center gap-2 text-pink-500 uppercase italic">
-            <Heart className="fill-pink-500" /> Cuidado GameBuddy
+            <Heart className="fill-pink-500" /> Cuidado Game_Buddy
           </h2>
           <div className="grid grid-cols-3 gap-3">
             <motion.button
@@ -426,7 +426,7 @@ const GamesView = ({
   const startGame = () => {
     if (energy < 15) {
       if (soundEnabled) playHitSound();
-      alert("¡Tu GameBuddy está muy cansado para jugar! Llévalo a dormir en Inicio.");
+      alert("¡Tu Game_Buddy está muy cansado para jugar! Llévalo a dormir en Inicio.");
       return;
     }
     const newEnergy = Math.max(0, energy - 15);
@@ -794,7 +794,7 @@ const RoomView = ({ buddyImg, onUpdateBuddy }: { buddyImg: string | null, onUpda
           ) : null}
           <div className="absolute inset-0 w-full h-full" style={{ background: room || "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)" }} />
           <div className="absolute inset-0 flex items-center justify-center">
-            <img src={buddyImg || ""} className="w-48 h-48 object-cover rounded-full filter drop-shadow-[0_20px_20px_rgba(0,0,0,0.4)] border-4 border-white mx-auto" alt="GameBuddy" />
+            <img src={buddyImg || ""} className="w-48 h-48 object-cover rounded-full filter drop-shadow-[0_20px_20px_rgba(0,0,0,0.4)] border-4 border-white mx-auto" alt="Game_Buddy" />
           </div>
         </div>
         <div className="space-y-6">
@@ -817,7 +817,7 @@ const RoomView = ({ buddyImg, onUpdateBuddy }: { buddyImg: string | null, onUpda
 
           <div className="bg-white p-8 rounded-[3rem] shadow-xl space-y-4">
             <h3 className="font-black text-xl mb-4 flex items-center gap-2">
-              <Smile className="text-blue-500" /> Estilo de GameBuddy
+              <Smile className="text-blue-500" /> Estilo de Game_Buddy
             </h3>
             <div className="grid grid-cols-2 gap-2">
               {buddyStyles.map(s => (
@@ -1076,7 +1076,7 @@ const LoginView = ({ onLogin }: { onLogin: (profile: UserProfile) => void }) => 
       >
         <div className="text-center mb-8">
           <Gamepad2 size={60} className="mx-auto text-blue-500 mb-4" />
-          <h1 className="text-4xl font-black text-blue-600 italic uppercase">Game Buddy Login</h1>
+          <h1 className="text-4xl font-black text-blue-600 italic uppercase">Game_Buddy Login</h1>
           <p className="text-gray-500 font-bold mt-2">Guarda a tu mascota en la nube</p>
         </div>
 
@@ -1263,8 +1263,8 @@ export default function App() {
             <Gamepad2 className="text-white fill-white" size={32} />
           </div>
           <div>
-            <h1 className="text-4xl font-black tracking-tighter text-blue-700 italic uppercase leading-none">GAME_BUDDY_TEST_V3</h1>
-            <p className="text-xs font-black text-blue-400 uppercase tracking-widest">NIVEL 12 TEST • Pro Player</p>
+            <h1 className="text-4xl font-black tracking-tighter text-blue-700 italic uppercase leading-none">GAME_BUDDY</h1>
+            <p className="text-xs font-black text-blue-400 uppercase tracking-widest">NIVEL 12 • Pro Player</p>
           </div>
         </motion.div>
 
