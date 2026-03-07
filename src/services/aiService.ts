@@ -57,10 +57,19 @@ export async function generateAIImage(prompt: string, allowShapesFallback = true
 
   if (!allowShapesFallback) return null;
 
-  const seed = Math.floor(Math.random() * 10000);
-  if (prompt.toLowerCase().includes("goku")) {
-    return `https://api.dicebear.com/9.x/micah/svg?seed=Felix&backgroundColor=ff8c00&hair=fonze&baseColor=f9c9b6&clothing=shirt`;
+  // Extremely polished, distinct fallbacks for the presentation
+  const p = prompt.toLowerCase();
+  if (p.includes("superhero") || p.includes("héroe")) return `https://api.dicebear.com/9.x/adventurer/svg?seed=Hero&backgroundColor=e63946&hair=short16&accessories=sunglasses`;
+  if (p.includes("astronauta") || p.includes("space")) return `https://api.dicebear.com/9.x/bottts/svg?seed=Astro&backgroundColor=457b9d&primaryColor=f1faee`;
+  if (p.includes("pirata")) return `https://api.dicebear.com/9.x/adventurer/svg?seed=Pirate&backgroundColor=283618&accessories=eyepatch`;
+  if (p.includes("mago") || p.includes("wizard")) return `https://api.dicebear.com/9.x/avataaars/svg?seed=Wizard&backgroundColor=7209b7&clothing=collarAndSweater&accessories=round`;
+  if (p.includes("robot")) return `https://api.dicebear.com/9.x/bottts/svg?seed=RoboGoku&backgroundColor=fca311`;
+
+  if (p.includes("goku")) {
+    return `https://api.dicebear.com/9.x/micah/svg?seed=Goku&backgroundColor=ff8c00&hair=fonze&baseColor=f9c9b6&clothing=shirt`;
   }
+
+  const seed = Math.floor(Math.random() * 10000);
   return `https://api.dicebear.com/9.x/shapes/svg?seed=${seed}&backgroundColor=0a0a0a`;
 }
 
@@ -77,9 +86,10 @@ export async function generateEnvironmentImage(prompt: string): Promise<string> 
   if (img) return `url('${img}') center/cover no-repeat`;
 
   // Gorgeous robust fallbacks based on room type
-  if (prompt.toLowerCase().includes("bosque")) return `linear-gradient(135deg, #2b5876 0%, #4e4376 100%)`;
-  if (prompt.toLowerCase().includes("galaxia")) return `linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)`;
-  if (prompt.toLowerCase().includes("castillo")) return `linear-gradient(135deg, #7b4397 0%, #dc2430 100%)`;
+  if (prompt.toLowerCase().includes("bosque")) return `linear-gradient(135deg, #134e5e 0%, #71b280 100%)`; // Lush forest
+  if (prompt.toLowerCase().includes("galaxia")) return `linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)`; // Deep space
+  if (prompt.toLowerCase().includes("castillo")) return `linear-gradient(135deg, #301847 0%, #C12A43 100%)`; // Royal castle
+  if (prompt.toLowerCase().includes("laboratorio")) return `linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%)`; // Sci-fi lab
 
   return `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`;
 }
