@@ -23,6 +23,13 @@ async function startServer() {
   // Parse JSON bodies for API routes
   app.use(express.json());
 
+  // --- Health Check for Render ---
+  app.get("/health", (req, res) => {
+    res.status(200).send("OK");
+  });
+
+  console.log("Setting up AI routes...");
+
   // --- AI Image Generation (Hugging Face / FLUX) ---
 
   // --- High Quality Image Generation Proxy (Hugging Face FLUX.1) ---
@@ -181,6 +188,7 @@ async function startServer() {
     });
   });
 
+  console.log("Configuring static files...");
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -196,8 +204,13 @@ async function startServer() {
   }
 
   httpServer.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
+    console.log(`>>> Server definitively running on http://0.0.0.0:${PORT}`);
+    console.log(`>>> Health check available at http://0.0.0.0:${PORT}/health`);
   });
 }
 
-startServer();
+console.log("Starting HospitalBuddy Server initialization...");
+startServer().catch(err => {
+  console.error("FATAL: Server failed to start:", err);
+  process.exit(1);
+});
