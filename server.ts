@@ -30,23 +30,22 @@ async function startServer() {
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: "prompt required" });
     try {
-      // Using black-forest-labs/FLUX.1-schnell via the new router endpoint
-      const response = await fetch(
-        "https://router.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.HF_TOKEN}`,
-            "Content-Type": "application/json",
-            "x-use-cache": "false"
-          },
-          method: "POST",
-          body: JSON.stringify({ inputs: prompt }),
-        }
-      );
+      // Use the router endpoint as suggested by HF for high reliability
+      const url = `https://router.huggingface.co/models/${process.env.HF_MODEL || 'black-forest-labs/FLUX.1-schnell'}`;
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${process.env.HF_TOKEN}`,
+          "Content-Type": "application/json",
+          "x-use-cache": "false"
+        },
+        method: "POST",
+        body: JSON.stringify({ inputs: prompt }),
+      });
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`HF API Failed: ${response.status} ${errorText}`);
+        throw new Error(`HF API [${url}] Failed: ${response.status} ${errorText}`);
       }
 
       const arrayBuffer = await response.arrayBuffer();
@@ -54,6 +53,30 @@ async function startServer() {
       res.json({ image: `data:image/webp;base64,${base64}` });
     } catch (err: any) {
       console.error("HF Image gen error:", err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // --- Fallback Image Generation Route (Stable Diffusion XL) ---
+  app.post("/api/fallback-image", async (req, res) => {
+    const { prompt } = req.body;
+    try {
+      const response = await fetch(
+        "https://router.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.HF_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+          body: JSON.stringify({ inputs: prompt }),
+        }
+      );
+      if (!response.ok) throw new Error("Fallback failed");
+      const arrayBuffer = await response.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString("base64");
+      res.json({ image: `data:image/webp;base64,${base64}` });
+    } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
   });

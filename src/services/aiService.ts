@@ -7,39 +7,39 @@
 const GOKU_PLACEHOLDER = `data:image/svg+xml;charset=utf-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="60" fill="#FF8C00"/><text x="60" y="75" text-anchor="middle" font-size="52" font-family="serif">🐉</text></svg>')}`;
 
 const BUDDY_PROMPTS: Record<string, string> = {
-  default: "Son Goku from Dragon Ball Z, iconic orange martial arts gi with blue undershirt and belt, spiky black hair, friendly and energetic expression, full body standing pose, anime style, high quality illustration, white background",
-  superhero: "cute superhero child version of goku with a red cape and heroic mask, colorful suit, standing pose, anime style, white background",
-  astronaut: "Goku wearing a detailed high-tech astronaut space suit, holding a helmet, smiling, space hero theme, anime style, white background",
-  pirate: "Goku as a friendly pirate captain with a captain hat and treasure map, adventurous pose, anime style, white background",
-  mago: "Goku as a powerful martial arts wizard with a glowing magic aura and a mystical staff, anime style, white background",
-  robot: "Cybernetic Goku, android version with glowing blue energy lines and robotic armor, anime style, white background",
+  default: "Masterpiece anime illustration of Son Goku, orange martial arts gi, blue undershirt, spiky black hair, energetic smile, dynamic standing pose, vibrant colors, sharp lines, high quality, white background",
+  superhero: "Goku as a powerful superhero with a flowing red cape and a glowing golden superhero emblem, heroic pose, anime style, highly detailed, white background",
+  astronaut: "Professional anime art of Goku in a detailed white space suit with blue accents, helmet under arm, friendly expression, space explorer theme, white background",
+  pirate: "Goku as a legendary pirate king with a black captain hat and a red coat, adventurous smile, treasure hunter aesthetic, anime style, white background",
+  mago: "Goku as a grand wizard with a mystical blue aura, holding a wooden magic staff, glowing eyes, powerful sorcerer theme, anime style, white background",
+  robot: "Mecha-Goku, advanced cyborg version with sleek white and blue plating, glowing neon energy ports, futuristic anime style, white background",
 };
 
 export async function generateAIImage(prompt: string): Promise<string | null> {
-  try {
-    const res = await fetch("/api/gemini-image", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt }),
-    });
-    if (!res.ok) {
-      // Fallback to Hugging Face if Gemini fails
-      console.warn("Gemini failed, falling back to HF...");
-      const hfRes = await fetch("/api/hf-image", {
+  // Chain of URLs to try for maximum reliability during the presentation
+  const urls = ["/api/hf-image", "/api/fallback-image"];
+
+  for (const url of urls) {
+    try {
+      console.log(`Trying image generation via ${url}...`);
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),
       });
-      if (!hfRes.ok) throw new Error(await hfRes.text());
-      const { image } = await hfRes.json();
-      return image || null;
+
+      if (res.ok) {
+        const { image } = await res.json();
+        if (image) return image;
+      }
+      console.warn(`${url} failed, moving to next...`);
+    } catch (err) {
+      console.error(`Error with ${url}:`, err);
     }
-    const { image } = await res.json();
-    return image || null;
-  } catch (err) {
-    console.error("AI Image error:", err);
-    return null;
   }
+
+  // Last resort: simple pollinations GET if backend fails (using a generic prompt)
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&nologo=true`;
 }
 
 export async function generateBuddyImage(prompt: string): Promise<string> {
