@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Copy, Plus, QrCode, RefreshCw, Settings, UserPlus, Users, X, Zap, Smile, WifiHigh, Sparkles, Play, Star, Gamepad2, Trophy, Palette, Heart, Home, BookOpen } from "lucide-react";
 import { io, Socket } from "socket.io-client";
-import { generateBuddyImage, generateEnvironmentImage, generateGameScenario, generateStoryContent, generateCheerMessage } from "./services/aiService";
+import { generateBuddyImage, generateEnvironmentImage, generateGameScenario, generateStoryContent, generateCheerMessage, generateMainSceneUrl } from "./services/aiService";
 import { cn } from "./lib/utils";
 import QRCode from 'react-qr-code';
 import { playClickSound, playCoinSound, playHitSound, playJumpSound } from "./lib/audioService";
@@ -205,7 +205,8 @@ const HomeView = ({
   setEnergy,
   happiness,
   setHappiness,
-  soundEnabled
+  soundEnabled,
+  sceneImg
 }: {
   buddyImg: string | null,
   roomImg: string | null,
@@ -216,7 +217,8 @@ const HomeView = ({
   setEnergy: React.Dispatch<React.SetStateAction<number>>,
   happiness: number,
   setHappiness: React.Dispatch<React.SetStateAction<number>>,
-  soundEnabled: boolean
+  soundEnabled: boolean,
+  sceneImg: string | null
 }) => {
   const feedBuddy = () => {
     if (soundEnabled) playClickSound();
@@ -255,17 +257,28 @@ const HomeView = ({
             </div>
           ) : (
             <>
-              {/* Room background - CSS gradient or image */}
-              <div className="absolute inset-0 w-full h-full" style={{ background: roomImg || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }} />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <motion.img
-                  animate={{ y: [0, -20, 0] }}
-                  transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                  src={buddyImg || ""}
-                  className="w-48 h-48 object-cover rounded-full border-4 border-white filter drop-shadow-[0_15px_15px_rgba(0,0,0,0.3)]"
-                  alt="Game_Buddy"
+              {/* Main Game Scene - Integrated Character and World */}
+              {sceneImg ? (
+                <img
+                  src={sceneImg}
+                  className="w-full h-full object-cover"
+                  alt="Game World"
+                  style={{ borderRadius: '20px' }}
                 />
-              </div>
+              ) : (
+                <>
+                  <div className="absolute inset-0 w-full h-full" style={{ background: roomImg || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }} />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <motion.img
+                      animate={{ y: [0, -20, 0] }}
+                      transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                      src={buddyImg || ""}
+                      className="w-48 h-48 object-cover rounded-full border-4 border-white filter drop-shadow-[0_15px_15px_rgba(0,0,0,0.3)]"
+                      alt="Game_Buddy"
+                    />
+                  </div>
+                </>
+              )}
 
               <AnimatePresence>
                 {cheerMessage && (
@@ -791,10 +804,22 @@ const RoomView = ({ buddyImg, onUpdateBuddy }: { buddyImg: string | null, onUpda
               <RefreshCw className="animate-spin text-orange-500" size={48} />
             </div>
           ) : null}
-          <div className="absolute inset-0 w-full h-full" style={{ background: room || "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)" }} />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <img src={buddyImg || ""} className="w-48 h-48 object-cover rounded-full filter drop-shadow-[0_20px_20px_rgba(0,0,0,0.4)] border-4 border-white mx-auto" alt="Game_Buddy" />
-          </div>
+
+          {(window as any).gameSceneImg ? (
+            <img
+              src={(window as any).gameSceneImg}
+              className="w-full h-full object-cover"
+              alt="Custom Scene"
+              style={{ borderRadius: '20px' }}
+            />
+          ) : (
+            <>
+              <div className="absolute inset-0 w-full h-full" style={{ background: room || "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)" }} />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <img src={buddyImg || ""} className="w-48 h-48 object-cover rounded-full filter drop-shadow-[0_20px_20px_rgba(0,0,0,0.4)] border-4 border-white mx-auto" alt="Game_Buddy" />
+              </div>
+            </>
+          )}
         </div>
         <div className="space-y-6">
           <div className="bg-white p-8 rounded-[3rem] shadow-xl space-y-4">
@@ -1135,6 +1160,7 @@ export default function App() {
   const [cheerMessage, setCheerMessage] = useState<string | null>(null);
   const [currentRoom, setCurrentRoom] = useState<string>("global");
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [sceneImg, setSceneImg] = useState<string | null>(null);
 
   // Buddy Care System State
   const [energy, setEnergy] = useState(100);
@@ -1145,7 +1171,10 @@ export default function App() {
     if (profile) {
       (window as any).currentUserProfile = profile;
     }
-  }, [profile]);
+    if (sceneImg) {
+      (window as any).gameSceneImg = sceneImg;
+    }
+  }, [profile, sceneImg]);
 
   useEffect(() => {
     async function loadInitialData() {
@@ -1165,11 +1194,13 @@ export default function App() {
         setLoading(false);
         // Generate both in parallel: Goku avatar + room background (HF takes ~10-15s)
         Promise.all([
-          generateBuddyImage("Goku from Dragon Ball, chibi anime style, orange gi, spiky black hair, energetic pose"),
+          generateBuddyImage("Goku from Dragon Ball Z, chibi anime style, orange gi, spiky black hair, energetic pose"),
           generateEnvironmentImage("A vibrant, colorful game lobby with floating islands and neon lights"),
         ]).then(([buddy, room]) => {
           setBuddyImg(buddy);
           setRoomImg(room);
+          // NEW: Initial Scene Generation using Pollinations for the presentation
+          setSceneImg(generateMainSceneUrl());
         }).catch(() => setRoomImg("linear-gradient(135deg, #667eea 0%, #764ba2 100%)"))
       } catch (error) {
         console.error("Error loading initial data:", error);
@@ -1307,6 +1338,7 @@ export default function App() {
                   updateCloudState('happiness', newVal, setHappiness, true);
                 }}
                 soundEnabled={soundEnabled}
+                sceneImg={sceneImg}
               />
             )}
             {activeTab === "games" && (

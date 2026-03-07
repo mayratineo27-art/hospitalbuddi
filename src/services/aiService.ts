@@ -15,6 +15,13 @@ const BUDDY_PROMPTS: Record<string, string> = {
   robot: "Goku as a cyborg robot with mechanical parts, anime style, white background",
 };
 
+// --- Scene Generation ---
+export const MAIN_SCENE_PROMPT = "cute chibi anime hero with spiky black hair, orange blue outfit, friendly smile, jumping on floating islands, colorful fantasy sky world, children video game environment, pixar style lighting, 3D cartoon game art, vibrant colors, highly detailed";
+
+export function getPollinationsUrl(prompt: string) {
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1280&height=720&nologo=true&seed=${Math.floor(Math.random() * 1000000)}`;
+}
+
 export async function generateAIImage(prompt: string): Promise<string | null> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 7000); // 7 second timeout for presentation speed
@@ -66,7 +73,12 @@ export async function generateEnvironmentImage(prompt: string): Promise<string> 
 }
 
 export async function generateGameScenario(prompt: string): Promise<string> {
-  return generateEnvironmentImage(prompt);
+  const fullPrompt = `${prompt}, high quality game world, children adventure style, vibrant`;
+  return getPollinationsUrl(fullPrompt);
+}
+
+export function generateMainSceneUrl() {
+  return getPollinationsUrl(MAIN_SCENE_PROMPT);
 }
 
 // Old functions removed for direct URL loading.
