@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Copy, Plus, QrCode, RefreshCw, Settings, UserPlus, Users, X, Zap, Smile, WifiHigh, Sparkles, Play, Star, Gamepad2, Trophy, Palette, Heart, Home, BookOpen } from "lucide-react";
 import { io, Socket } from "socket.io-client";
-import { generateBuddyImage, generateEnvironmentImage, generateGameScenario, generateStoryContent, generateCheerMessage, generateMainSceneUrl } from "./services/aiService";
+import { generateBuddyImage, generateEnvironmentImage, generateGameScenario, generateStoryContent, generateCheerMessage, generateMainSceneUrl, generateAIImage } from "./services/aiService";
 import { cn } from "./lib/utils";
 import QRCode from 'react-qr-code';
 import { playClickSound, playCoinSound, playHitSound, playJumpSound } from "./lib/audioService";
@@ -1256,10 +1256,13 @@ export default function App() {
 
     // Also update scene to show the buddy in full scene
     const scenePrompt = `Goku Dragon Ball character, ${stylePrompt}, in a colorful game world environment, Pixar 3D cartoon style, vibrant`;
-    const newScene = await generateAIImage(scenePrompt);
+    const newScene = await generateAIImage(scenePrompt, false);
     if (newScene) {
       setSceneImg(newScene);
       (window as any).gameSceneImg = newScene;
+    } else {
+      setSceneImg(null);
+      (window as any).gameSceneImg = null;
     }
   };
 

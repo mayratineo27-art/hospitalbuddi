@@ -18,7 +18,7 @@ const BUDDY_PROMPTS: Record<string, string> = {
 // --- Scene Generation ---
 export const MAIN_SCENE_PROMPT = "cute chibi anime hero with spiky black hair, orange blue outfit, friendly smile, jumping on floating islands, colorful fantasy sky world, children video game environment, pixar style lighting, 3D cartoon game art, vibrant colors, highly detailed";
 
-export async function generateAIImage(prompt: string): Promise<string | null> {
+export async function generateAIImage(prompt: string, allowShapesFallback = true): Promise<string | null> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s for DALL-E 3
 
@@ -60,7 +60,7 @@ export async function generateAIImage(prompt: string): Promise<string | null> {
   if (prompt.toLowerCase().includes("goku")) {
     return `https://api.dicebear.com/9.x/micah/svg?seed=Felix&backgroundColor=ff8c00&hair=fonze&baseColor=f9c9b6&clothing=shirt`;
   }
-  return `https://api.dicebear.com/9.x/shapes/svg?seed=${seed}&backgroundColor=0a0a0a`;
+  return allowShapesFallback ? `https://api.dicebear.com/9.x/shapes/svg?seed=${seed}&backgroundColor=0a0a0a` : null;
 }
 
 export async function generateBuddyImage(prompt: string): Promise<string> {
@@ -72,7 +72,7 @@ export async function generateBuddyImage(prompt: string): Promise<string> {
 
 export async function generateEnvironmentImage(prompt: string): Promise<string> {
   const fullPrompt = `${prompt}, stunning game landscape, 8k resolution, cinematic lighting, concept art, vibrant, immersive, masterpiece`;
-  const img = await generateAIImage(fullPrompt);
+  const img = await generateAIImage(fullPrompt, false);
   if (img) return `url('${img}') center/cover no-repeat`;
 
   // Gorgeous robust fallbacks based on room type
@@ -85,11 +85,11 @@ export async function generateEnvironmentImage(prompt: string): Promise<string> 
 
 export async function generateGameScenario(prompt: string): Promise<string | null> {
   const fullPrompt = `${prompt}, high quality game world, children adventure style, vibrant`;
-  return generateAIImage(fullPrompt);
+  return generateAIImage(fullPrompt, false);
 }
 
 export async function generateMainSceneUrl(): Promise<string | null> {
-  return generateAIImage(MAIN_SCENE_PROMPT);
+  return generateAIImage(MAIN_SCENE_PROMPT, false);
 }
 
 // Old functions removed for direct URL loading.
