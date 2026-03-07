@@ -7,6 +7,7 @@ import { Server } from "socket.io";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 
 async function startServer() {
   const app = express();
@@ -186,6 +187,46 @@ async function startServer() {
         }
       }
     });
+  });
+
+  // --- OpenAI API Routes ---
+  const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+
+  app.post("/api/openai-text", async (req, res) => {
+    const { systemPrompt, userPrompt, model = "gpt-4o", maxTokens = 500 } = req.body;
+    if (!openai) return res.status(500).json({ error: "OPENAI_API_KEY not configured" });
+    try {
+      const completion = await openai.chat.completions.create({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        model,
+        max_tokens: maxTokens,
+      });
+      res.json({ text: completion.choices[0]?.message?.content || "" });
+    } catch (err: any) {
+      console.error("OpenAI Text error:", err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/openai-image", async (req, res) => {
+    const { prompt } = req.body;
+    if (!openai) return res.status(500).json({ error: "OPENAI_API_KEY not configured" });
+    try {
+      const response = await openai.images.generate({
+        model: "dall-e-3",
+        prompt,
+        n: 1,
+        size: "1024x1024",
+        response_format: "b64_json"
+      });
+      res.json({ image: `data:image/png;base64,${response.data[0].b64_json}` });
+    } catch (err: any) {
+      console.error("OpenAI Image error:", err.message);
+      res.status(500).json({ error: err.message });
+    }
   });
 
   console.log("Configuring static files...");

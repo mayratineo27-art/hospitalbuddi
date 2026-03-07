@@ -24,10 +24,11 @@ export function getPollinationsUrl(prompt: string) {
 
 export async function generateAIImage(prompt: string): Promise<string | null> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 7000); // 7 second timeout for presentation speed
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s for DALL-E 3
 
   try {
-    const res = await fetch("/api/hf-image", {
+    // Try OpenAI DALL-E 3 first
+    const res = await fetch("/api/openai-image", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt }),
@@ -41,18 +42,30 @@ export async function generateAIImage(prompt: string): Promise<string | null> {
     }
   } catch (err) {
     clearTimeout(timeoutId);
-    console.error("AI Image Timeout or Error:", err);
+    console.warn("OpenAI Image failed, falling back to HF...", err);
   }
 
-  // High-quality Dicebear fallbacks for presentation safety
+  // Fallback to existing HF chain
+  try {
+    const hfRes = await fetch("/api/hf-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
+    if (hfRes.ok) {
+      const { image } = await hfRes.json();
+      if (image) return image;
+    }
+  } catch (err) {
+    console.error("HF Fallback failed:", err);
+  }
+
+  // High-quality Dicebear fallbacks
   const seed = Math.floor(Math.random() * 10000);
   if (prompt.toLowerCase().includes("goku")) {
     return `https://api.dicebear.com/9.x/adventurer/svg?seed=Goku${seed}&backgroundColor=ff8c00&flip=true`;
   }
-  if (prompt.toLowerCase().includes("lobby") || prompt.toLowerCase().includes("environment")) {
-    return `linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)`; // Clean blue fallback for rooms
-  }
-  return `https://api.dicebear.com/9.x/shapes/svg?seed=${seed}`;
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&nologo=true`;
 }
 
 export async function generateBuddyImage(prompt: string): Promise<string> {
