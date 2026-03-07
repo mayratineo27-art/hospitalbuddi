@@ -40,12 +40,27 @@ export async function generateAIImage(prompt: string): Promise<string | null> {
     console.warn("OpenAI Image error:", err);
   }
 
-  // Backup static Dicebear fallback if OpenAI key fails or generation errors out
+  // Fallback to HF instantly if OpenAI fails
+  try {
+    const hfRes = await fetch("/api/hf-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
+    if (hfRes.ok) {
+      const { image } = await hfRes.json();
+      if (image) return image;
+    }
+  } catch (err) {
+    console.error("HF Fallback failed:", err);
+  }
+
+  // Beautiful Dicebear fallback for Goku if API fails
   const seed = Math.floor(Math.random() * 10000);
   if (prompt.toLowerCase().includes("goku")) {
-    return `https://api.dicebear.com/9.x/adventurer/svg?seed=Goku${seed}&backgroundColor=ff8c00&flip=true`;
+    return `https://api.dicebear.com/9.x/micah/svg?seed=Felix&backgroundColor=ff8c00&hair=fonze&baseColor=f9c9b6&clothing=shirt`;
   }
-  return `https://api.dicebear.com/9.x/shapes/svg?seed=${seed}&backgroundColor=e2e8f0`;
+  return `https://api.dicebear.com/9.x/shapes/svg?seed=${seed}&backgroundColor=0a0a0a`;
 }
 
 export async function generateBuddyImage(prompt: string): Promise<string> {
@@ -56,12 +71,15 @@ export async function generateBuddyImage(prompt: string): Promise<string> {
 }
 
 export async function generateEnvironmentImage(prompt: string): Promise<string> {
-  // Enhanced prompt for premium game environment look
   const fullPrompt = `${prompt}, stunning game landscape, 8k resolution, cinematic lighting, concept art, vibrant, immersive, masterpiece`;
   const img = await generateAIImage(fullPrompt);
   if (img) return `url('${img}') center/cover no-repeat`;
 
-  // Fallback to a nice gradient if AI fails
+  // Gorgeous robust fallbacks based on room type
+  if (prompt.toLowerCase().includes("bosque")) return `linear-gradient(135deg, #2b5876 0%, #4e4376 100%)`;
+  if (prompt.toLowerCase().includes("galaxia")) return `linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)`;
+  if (prompt.toLowerCase().includes("castillo")) return `linear-gradient(135deg, #7b4397 0%, #dc2430 100%)`;
+
   return `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`;
 }
 

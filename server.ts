@@ -113,6 +113,53 @@ async function startServer() {
     }
   });
 
+  // --- AI Image Generation (Hugging Face / FLUX) ---
+  app.post("/api/hf-image", async (req, res) => {
+    const { prompt } = req.body;
+    if (!prompt) return res.status(400).json({ error: "prompt required" });
+    if (!process.env.HF_TOKEN) return res.status(500).json({ error: "HF_TOKEN not configured" });
+
+    const models = [
+      "black-forest-labs/FLUX.1-schnell",
+      "stabilityai/stable-diffusion-xl-base-1.0",
+      "runwayml/stable-diffusion-v1-5"
+    ];
+
+    for (const model of models) {
+      try {
+        const response = await fetch(
+          `https://api-inference.huggingface.co/models/${model}`,
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.HF_TOKEN}`,
+              "Content-Type": "application/json",
+              "x-use-cache": "false",
+              "x-wait-for-model": "true"
+            },
+            method: "POST",
+            body: JSON.stringify({ inputs: prompt }),
+          }
+        );
+
+        if (response.ok) {
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const json = await response.json();
+            if (json.error) continue;
+          }
+
+          const arrayBuffer = await response.arrayBuffer();
+          const base64 = Buffer.from(arrayBuffer).toString("base64");
+          return res.json({ image: `data:image/png;base64,${base64}` });
+        }
+      } catch (err: any) {
+        console.error(`Error with model ${model}:`, err.message);
+      }
+    }
+
+    res.status(500).json({ error: "All HF models failed" });
+  });
+
   console.log("Configuring static files...");
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
