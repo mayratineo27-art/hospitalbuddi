@@ -55,12 +55,13 @@ export async function generateAIImage(prompt: string, allowShapesFallback = true
     console.error("HF Fallback failed:", err);
   }
 
-  // Beautiful Dicebear fallback for Goku if API fails
+  if (!allowShapesFallback) return null;
+
   const seed = Math.floor(Math.random() * 10000);
   if (prompt.toLowerCase().includes("goku")) {
     return `https://api.dicebear.com/9.x/micah/svg?seed=Felix&backgroundColor=ff8c00&hair=fonze&baseColor=f9c9b6&clothing=shirt`;
   }
-  return allowShapesFallback ? `https://api.dicebear.com/9.x/shapes/svg?seed=${seed}&backgroundColor=0a0a0a` : null;
+  return `https://api.dicebear.com/9.x/shapes/svg?seed=${seed}&backgroundColor=0a0a0a`;
 }
 
 export async function generateBuddyImage(prompt: string): Promise<string> {
