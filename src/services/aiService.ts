@@ -23,7 +23,6 @@ export async function generateAIImage(prompt: string): Promise<string | null> {
   const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s for DALL-E 3
 
   try {
-    // Try OpenAI DALL-E 3 first
     const res = await fetch("/api/openai-image", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -38,25 +37,10 @@ export async function generateAIImage(prompt: string): Promise<string | null> {
     }
   } catch (err) {
     clearTimeout(timeoutId);
-    console.warn("OpenAI Image failed, falling back to HF...", err);
+    console.warn("OpenAI Image error:", err);
   }
 
-  // Fallback to existing HF chain
-  try {
-    const hfRes = await fetch("/api/hf-image", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt }),
-    });
-    if (hfRes.ok) {
-      const { image } = await hfRes.json();
-      if (image) return image;
-    }
-  } catch (err) {
-    console.error("HF Fallback failed:", err);
-  }
-
-  // High-quality Dicebear fallbacks
+  // Backup static Dicebear fallback if OpenAI key fails or generation errors out
   const seed = Math.floor(Math.random() * 10000);
   if (prompt.toLowerCase().includes("goku")) {
     return `https://api.dicebear.com/9.x/adventurer/svg?seed=Goku${seed}&backgroundColor=ff8c00&flip=true`;
@@ -92,10 +76,10 @@ export async function generateMainSceneUrl(): Promise<string | null> {
 
 // Old functions removed for direct URL loading.
 
-// ── Text generation via Groq proxy ──
+// ── Text generation via OpenAI proxy ──
 async function callTextAPI(systemPrompt: string, userPrompt: string, maxTokens = 200): Promise<string | null> {
   try {
-    const res = await fetch("/api/generate-text", {
+    const res = await fetch("/api/openai-text", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ systemPrompt, userPrompt, maxTokens }),
@@ -104,7 +88,7 @@ async function callTextAPI(systemPrompt: string, userPrompt: string, maxTokens =
     const { text } = await res.json();
     return text || null;
   } catch (err) {
-    console.error("Text API error:", err);
+    console.error("OpenAI Text API error:", err);
     return null;
   }
 }
