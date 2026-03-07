@@ -806,18 +806,8 @@ const RoomView = ({ buddyImg, onUpdateBuddy }: { buddyImg: string | null, onUpda
             </div>
           ) : null}
 
-          {/* Always show image - use room URL if set, otherwise use gameSceneImg */}
-          {room && room.startsWith('https') ? (
-            <img
-              src={room}
-              className="w-full h-full object-cover"
-              alt="Room Scene"
-              style={{ borderRadius: '20px' }}
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-          ) : (window as any).gameSceneImg ? (
+          {/* If there's a custom scene image (and it's a URL), show it. Otherwise show room background and buddy. */}
+          {(window as any).gameSceneImg ? (
             <img
               src={(window as any).gameSceneImg}
               className="w-full h-full object-cover"
@@ -826,9 +816,18 @@ const RoomView = ({ buddyImg, onUpdateBuddy }: { buddyImg: string | null, onUpda
             />
           ) : (
             <>
-              <div className="absolute inset-0 w-full h-full" style={{ background: room || "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)" }} />
+              {/* Room Background (Gradient or Image) */}
+              <div
+                className="absolute inset-0 w-full h-full"
+                style={{ background: room || "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)" }}
+              />
+              {/* Buddy Image placed on top */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <img src={buddyImg || ""} className="w-48 h-48 object-cover rounded-full filter drop-shadow-[0_20px_20px_rgba(0,0,0,0.4)] border-4 border-white mx-auto" alt="Game_Buddy" />
+                <img
+                  src={buddyImg || ""}
+                  className="w-48 h-48 object-cover rounded-full filter drop-shadow-[0_20px_20px_rgba(0,0,0,0.4)] border-4 border-white mx-auto z-10"
+                  alt="Game_Buddy"
+                />
               </div>
             </>
           )}
